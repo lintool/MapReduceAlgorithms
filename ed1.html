@@ -7,7 +7,6 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <!-- Le styles -->
     <link href="assets/css/bootstrap.css" rel="stylesheet">
     <link href="assets/css/bootstrap-responsive.css" rel="stylesheet">
     <link href="assets/css/docs.css" rel="stylesheet">
@@ -20,7 +19,7 @@
 
   </head>
 
-  <body>
+  <body style="background-image: url(assets/img/grid-18px-masked.png)">
 
     <div class="navbar navbar-fixed-top">
       <div class="navbar-inner">
@@ -49,11 +48,60 @@
 
     <div class="container">
 
-  <div class="page-header">
-    <h1>Data-Intensive Text Processing with MapReduce <small>(First Edition)</small></h1>
-<p class="lead">Jimmy Lin and Chris Dyer.<br/>
+<!-- Masthead
+================================================== -->
+<header class="jumbotron subhead" id="overview" style="padding-top: 30px;">
+
+<h1>Data-Intensive Text Processing<br/>with MapReduce</h1>
+
+<p class="lead">by Jimmy Lin and Chris Dyer.<br/>
 Morgan & Claypool Publishers, 2010.</p>
+
+<p><a href="MapReduce-book-final.pdf" class="btn btn-primary">Download book now!</a></p>
+
+  <div class="subnav">
+    <ul class="nav nav-pills">
+      <li><a href="#info">Book Information</a></li>
+      <li><a href="#ref">Reference Implementations</a></li>
+      <li><a href="#adoption">Reviews and Adoption</a></li>
+    </ul>
   </div>
+
+</header>
+
+<section id="info">
+<div class="page-header">
+<h1>Book Information</h1>
+<p class="pull-right"><a href="#">Back to top</a></p>
+</div>
+
+<div class="row">
+    <div class="span4">
+
+<h2>Table of Contents</h2>
+
+<ol>
+
+  <li>Introduction</li>
+
+  <li>MapReduce Basics</li>
+
+  <li>MapReduce algorithm design</li>
+
+  <li>Inverted Indexing for Text Retrieval</li>
+
+  <li>Graph Algorithms</li>
+
+  <li>EM Algorithms for Text Processing</li>
+
+  <li>Closing Remarks</li>
+
+</ol>
+
+</div>
+
+
+<div class="span8">
 
 <h2>Abstract</h2>
 
@@ -80,7 +128,8 @@ as well.</p>
 
 <p>Quite explicitly, this book focuses on MapReduce algorithm design, not <a href="http://hadoop.apache.org/">Hadoop</a> programming.  Tom White's <a href="http://www.amazon.com/gp/product/0596521979?ie=UTF8&amp;tag=dataintetextp-20&amp;linkCode=as2&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0596521979">Hadoop: The Definitive Guide</a><img src="http://www.assoc-amazon.com/e/ir?t=dataintetextp-20&amp;l=as2&amp;o=1&amp;a=0596521979" width="1" height="1" alt="" style="border:none !important; margin:0px !important;" /> is a great resource for learning Hadoop.</p>
 
-<h2 style="padding-top:15px">Getting the Book</h2>
+
+<h2>Publisher</h2>
 
 <p>This book is part of the Morgan &amp; Claypool <a
 href="http://www.morganclaypool.com/toc/hlt/1/1">Synthesis Lectures on
@@ -106,27 +155,21 @@ manuscript</a> (April 11, 2010) as a preview.  If you find this
 resource helpful, please consider purchasing an actual copy to support
 our work!</p>
 
-<h2 style="padding-top:15px">Table of Contents</h2>
+</div>
 
-<ol>
 
-  <li>Introduction</li>
+    </div>
 
-  <li>MapReduce Basics</li>
 
-  <li>MapReduce algorithm design</li>
 
-  <li>Inverted Indexing for Text Retrieval</li>
+</section>
 
-  <li>Graph Algorithms</li>
 
-  <li>EM Algorithms for Text Processing</li>
-
-  <li>Closing Remarks</li>
-
-</ol>
-
-<h2 style="padding-top:15px">Design Patterns &amp; Algorithms</h2>
+<section id="ref">
+<div class="page-header">
+<h1>Reference Implementations</h1>
+<p class="pull-right"><a href="#">Back to top</a></p>
+</div>
 
 <p><a href="http://www.umiacs.umd.edu/~jimmylin/Cloud9/docs/index.html">Cloud<sup><small>9</small></sup></a>
 is a MapReduce library for Hadoop designed to serve as both a teaching
@@ -152,7 +195,16 @@ repository contains:</p>
 
 </ul>
 
-<h2 style="padding-top:15px">What People Are Saying</h2>
+</section>
+
+
+<section id="adoption">
+<div class="page-header">
+<h1>Reviews and Adoption</h1>
+<p class="pull-right"><a href="#">Back to top</a></p>
+</div>
+
+<h3>What others are saying...</h3>
 
 <ul>
 
@@ -166,47 +218,59 @@ repository contains:</p>
 
   <li>Deepak Singh from Amazon <a href="http://mndoci.com/2010/07/02/recommendation-data-intensive-text-processing-with-mapreduce/">recommends the book</a> (July 2, 2010)</li>
 
-  <li>Used in <a href="http://www.csee.ogi.edu/~zak/cs506-pslc/">CS 506/606: Special Topics: Problem Solving with Large Clusters</a> by Izhak Shafran and Richard Sproat at Oregon Health & Science University (Spring 2010)</li>
+</ul>
 
-  <li>Used in a Google-supported <a href="http://net.pku.edu.cn/~course/cs402/2010/index.html">Peking University course</a> on cloud computing by Hongfei Yan and Bo Peng (Summer, 2010)</li>
+<h3>Courses using this book...</h3>
 
-  <li>Used in <a href="http://www.andyli.ece.ufl.edu/teaching/eel6935/">EEL 6935: Special Topics in Cloud Computing and Storage</a> by Andy Li at the University of Florida (Fall, 2010 and Fall, 2011)</li>
+<ul>
 
-  <li>Used in <a href="http://courses.cs.tamu.edu/caverlee/csce689/">CSCE 689: Internet-Scale Data Management</a> by James Caverlee at Texas A&amp;M (Fall, 2010)</li>
+  <li><a href="http://www.csee.ogi.edu/~zak/cs506-pslc/">CS 506/606: Special Topics: Problem Solving with Large Clusters</a> by Izhak Shafran and Richard Sproat at Oregon Health & Science University (Spring 2010)</li>
 
-  <li>Used in <a href="http://courses.cse.tamu.edu/caverlee/csce670/">CSCE 670: Information Storage and Retrieval</a> by James Caverlee at Texas A&amp;M (Spring, 2011 and Spring, 2012)</li>
+  <li><a href="http://net.pku.edu.cn/~course/cs402/2010/index.html">Peking University course</a> on cloud computing by Hongfei Yan and Bo Peng (Summer, 2010)</li>
 
-  <li>Used in <a href="http://cs.ua.edu/691Vrbsky/">CS 691-001: Cloud Computing</a> by Susan Vrbsky at University of Alabama (Spring, 2011)</li>
+  <li><a href="http://www.andyli.ece.ufl.edu/teaching/eel6935/">EEL 6935: Special Topics in Cloud Computing and Storage</a> by Andy Li at the University of Florida (Fall, 2010 and Fall, 2011)</li>
 
-  <li>Used in <a href="http://courses.washington.edu/css534/syllabi/s11.html">CSS 534: Parallel Programming in Grid and Cloud</a> by Munehiro Fukuda at University of Washington (Spring, 2011)</li>
+  <li><a href="http://courses.cs.tamu.edu/caverlee/csce689/">CSCE 689: Internet-Scale Data Management</a> by James Caverlee at Texas A&amp;M (Fall, 2010)</li>
 
-  <li>Used in <a href="http://snap.stanford.edu/class/cs341-2011/">CS341: Advanced Topics in Data Mining</a> by Jure Leskovec, Anand Rajaraman, and Jeff Ullman at Stanford (Spring, 2011)</li>
+  <li><a href="http://courses.cse.tamu.edu/caverlee/csce670/">CSCE 670: Information Storage and Retrieval</a> by James Caverlee at Texas A&amp;M (Spring, 2011 and Spring, 2012)</li>
 
-  <li>Used in <a href="http://www.eurecom.fr/~michiard/CCSS.html">Summer School on Cloud Computing: Challenges and opportunities</a> by Pietro Michiard (Summer, 2011)</li>
+  <li><a href="http://cs.ua.edu/691Vrbsky/">CS 691-001: Cloud Computing</a> by Susan Vrbsky at University of Alabama (Spring, 2011)</li>
 
-  <li>Used in a <a href="http://net.pku.edu.cn/~course/cs402/2011/index.html">Peking University course</a> on mass data processing/cloud computing by Hongfei Yan and Bo Peng (Summer, 2011)</li>
+  <li><a href="http://courses.washington.edu/css534/syllabi/s11.html">CSS 534: Parallel Programming in Grid and Cloud</a> by Munehiro Fukuda at University of Washington (Spring, 2011)</li>
 
-  <li>Used in <a href="http://dicta-f11.utcompling.com/">CS395T / INF385T / LIN386M: Data-Intensive Computing for Text Analysis</a> by Jason Baldridge and Matt Lease at the University of Texas, Austin (Fall, 2011)</li>
+  <li><a href="http://snap.stanford.edu/class/cs341-2011/">CS341: Advanced Topics in Data Mining</a> by Jure Leskovec, Anand Rajaraman, and Jeff Ullman at Stanford (Spring, 2011)</li>
 
-  <li>Used in <a href="http://www.ccs.neu.edu/home/mirek/classes/2011-F-CS6240/index.htm">CS 6240: Parallel Data Processing in MapReduce</a> by Mirek Riedewald at Northeastern University (Fall 2011)</li>
+  <li><a href="http://www.eurecom.fr/~michiard/CCSS.html">Summer School on Cloud Computing: Challenges and opportunities</a> by Pietro Michiard (Summer, 2011)</li>
 
-  <li>Used in <a href="http://www.cs.gmu.edu/syllabus/syllabi-fall11/CS795BarbaraD.html">CS 795 Mining Massive Datasets</a> by Daniel Barbara at George Mason University (Fall, 2011)</li>
+  <li><a href="http://net.pku.edu.cn/~course/cs402/2011/index.html">Peking University course</a> on mass data processing/cloud computing by Hongfei Yan and Bo Peng (Summer, 2011)</li>
 
-  <li>Used in <a href="http://www.cs.kent.edu/~jin/Cloud12Spring/Cloud.html">CS 4/5/6/79995: Advanced Computing Platforms for Data Processing</a> by Ruoming Jin at Kent State University (Spring 2012)</li>
+  <li><a href="http://dicta-f11.utcompling.com/">CS395T / INF385T / LIN386M: Data-Intensive Computing for Text Analysis</a> by Jason Baldridge and Matt Lease at the University of Texas, Austin (Fall, 2011)</li>
 
-  <li>Used in <a href="http://beowulf.lcs.mit.edu/18.337/">18.337/6.338: Parallel Computing</a> by Alan Edelman at MIT (Fall, 2011)</li>
+  <li><a href="http://www.ccs.neu.edu/home/mirek/classes/2011-F-CS6240/index.htm">CS 6240: Parallel Data Processing in MapReduce</a> by Mirek Riedewald at Northeastern University (Fall 2011)</li>
 
-  <li>Used in <a href="http://www.cse.buffalo.edu/~bina/cse487/fall2011/">CSE487/587 Data-Intensive Computing</a> by Bina Ramamurthy at SUNY Buffalo (Fall, 2011)</li>
+  <li><a href="http://www.cs.gmu.edu/syllabus/syllabi-fall11/CS795BarbaraD.html">CS 795 Mining Massive Datasets</a> by Daniel Barbara at George Mason University (Fall, 2011)</li>
 
-  <li>Used in <a href="http://www.csc.lsu.edu/~wuyj/Teaching/7481/fa11/">CSC7481/LIS 7610 - Information Retrieval Systems</a> by Yejun Wu at LSU (Fall, 2011)</li>
+  <li><a href="http://www.cs.kent.edu/~jin/Cloud12Spring/Cloud.html">CS 4/5/6/79995: Advanced Computing Platforms for Data Processing</a> by Ruoming Jin at Kent State University (Spring 2012)</li>
 
-  <li>Used in <a href="http://www.cs.brown.edu/courses/csci2950-u/f11/index.html">CSCI-2950u: Data-Intensive Scalable Computing</a> by Rodrigo Fonseca at Brown (Fall, 2011)</li>
+  <li><a href="http://beowulf.lcs.mit.edu/18.337/">18.337/6.338: Parallel Computing</a> by Alan Edelman at MIT (Fall, 2011)</li>
 
-  <li>Used in <a href="http://www.cs.sunysb.edu/~rezaul/CSE590-S12.html">CSE 590 (#50569): Topics in Computer Science (Supercomputing)</a> by Rezaul A. Chowdhury at Stony Brook University (Spring 2012)</li>
+  <li><a href="http://www.cse.buffalo.edu/~bina/cse487/fall2011/">CSE487/587 Data-Intensive Computing</a> by Bina Ramamurthy at SUNY Buffalo (Fall, 2011)</li>
 
-  <li>Used in <a href="http://www-scf.usc.edu/~csci572/">Course 572: Information Retrieval and Web Search Engines</a> by Ellis Horowitz at USC (Spring 2012)</li>
+  <li><a href="http://www.csc.lsu.edu/~wuyj/Teaching/7481/fa11/">CSC7481/LIS 7610 - Information Retrieval Systems</a> by Yejun Wu at LSU (Fall, 2011)</li>
+
+  <li><a href="http://www.cs.brown.edu/courses/csci2950-u/f11/index.html">CSCI-2950u: Data-Intensive Scalable Computing</a> by Rodrigo Fonseca at Brown (Fall, 2011)</li>
+
+  <li><a href="http://www.cs.sunysb.edu/~rezaul/CSE590-S12.html">CSE 590 (#50569): Topics in Computer Science (Supercomputing)</a> by Rezaul A. Chowdhury at Stony Brook University (Spring 2012)</li>
+
+  <li><a href="http://www-scf.usc.edu/~csci572/">Course 572: Information Retrieval and Web Search Engines</a> by Ellis Horowitz at USC (Spring 2012)</li>
 
 </ul>
+
+</section>
+
+   <footer class="footer">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+      </footer>
 
     </div> <!-- /container -->
 
