@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Data-Intensive Text Processing with MapReduce</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+    <link href="assets/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="assets/css/docs.css" rel="stylesheet">
+    <link href="assets/js/google-code-prettify/prettify.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="index.html">Home</a>
+              </li>
+              <li class="active">
+                <a href="ed1.html">1st Edition</a>
+              </li>
+              <li class="">
+                <a href="ed2.html">2nd Edition</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+  <div class="page-header">
+    <h1>Data-Intensive Text Processing with MapReduce <small>(First Edition)</small></h1>
+<p class="lead">Jimmy Lin and Chris Dyer.<br/>
+Morgan & Claypool Publishers, 2010.</p>
+  </div>
+
+<h2>Abstract</h2>
+
+<p>Our world is being revolutionized by data-driven methods: access to
+large amounts of data has generated new insights and opened exciting
+new opportunities in commerce, science, and computing
+applications. Processing the enormous quantities of data necessary for
+these advances requires large clusters, making distributed computing
+paradigms more crucial than ever. MapReduce is a programming model for
+expressing distributed computations on massive datasets and an
+execution framework for large-scale data processing on clusters of
+commodity servers. The programming model provides an
+easy-to-understand abstraction for designing scalable algorithms,
+while the execution framework transparently handles many system-level
+details, ranging from scheduling to synchronization to fault
+tolerance. This book focuses on MapReduce algorithm design, with an
+emphasis on text processing algorithms common in natural language
+processing, information retrieval, and machine learning. We introduce
+the notion of MapReduce design patterns, which represent general
+reusable solutions to commonly occurring problems across a variety of
+problem domains. This book not only intends to help the reader "think
+in MapReduce", but also discusses limitations of the programming model
+as well.</p>
+
+<p>Quite explicitly, this book focuses on MapReduce algorithm design, not <a href="http://hadoop.apache.org/">Hadoop</a> programming.  Tom White's <a href="http://www.amazon.com/gp/product/0596521979?ie=UTF8&amp;tag=dataintetextp-20&amp;linkCode=as2&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0596521979">Hadoop: The Definitive Guide</a><img src="http://www.assoc-amazon.com/e/ir?t=dataintetextp-20&amp;l=as2&amp;o=1&amp;a=0596521979" width="1" height="1" alt="" style="border:none !important; margin:0px !important;" /> is a great resource for learning Hadoop.</p>
+
+<h2 style="padding-top:15px">Getting the Book</h2>
+
+<p>This book is part of the Morgan &amp; Claypool <a
+href="http://www.morganclaypool.com/toc/hlt/1/1">Synthesis Lectures on
+Human Language Technologies</a>.  If you're at a university, your
+institution may already subscribe to the series, in which case you can
+access the <a
+href="http://dx.doi.org/10.2200/S00274ED1V01Y201006HLT007">electronic
+version</a> directly without cost (see <a
+href="http://www.morganclaypool.com/page/licensed">this page</a> for a
+list of institutional subscribers).  Otherwise, to purchase:</p>
+
+<ul>
+
+  <li>Electronic and print copies from <a href="http://dx.doi.org/10.2200/S00274ED1V01Y201006HLT007">Morgan &amp; Claypool</a> (publisher's site)</li>
+
+  <li>Print copies from <a href="http://www.amazon.com/gp/product/1608453421?ie=UTF8&amp;tag=dataintetextp-20&amp;linkCode=as2&amp;camp=1789&amp;creative=9325&amp;creativeASIN=1608453421">Amazon.com</a><img src="http://www.assoc-amazon.com/e/ir?t=dataintetextp-20&amp;l=as2&amp;o=1&amp;a=1608453421" width="1" height="1" alt="" style="border:none !important; margin:0px !important;" /></li>
+
+</ul>
+
+<p>We are pleased to provide
+the <a href="MapReduce-book-final.pdf">final pre-production
+manuscript</a> (April 11, 2010) as a preview.  If you find this
+resource helpful, please consider purchasing an actual copy to support
+our work!</p>
+
+<h2 style="padding-top:15px">Table of Contents</h2>
+
+<ol>
+
+  <li>Introduction</li>
+
+  <li>MapReduce Basics</li>
+
+  <li>MapReduce algorithm design</li>
+
+  <li>Inverted Indexing for Text Retrieval</li>
+
+  <li>Graph Algorithms</li>
+
+  <li>EM Algorithms for Text Processing</li>
+
+  <li>Closing Remarks</li>
+
+</ol>
+
+<h2 style="padding-top:15px">Design Patterns &amp; Algorithms</h2>
+
+<p><a href="http://www.umiacs.umd.edu/~jimmylin/Cloud9/docs/index.html">Cloud<sup><small>9</small></sup></a>
+is a MapReduce library for Hadoop designed to serve as both a teaching
+tool and to support research in data-intensive text processing.  It
+also serves as a repository of
+<a href="http://www.umiacs.umd.edu/~jimmylin/Cloud9/docs/content/patterns.html">many
+examples</a> discussed in the book.  Reference implementations of
+design patterns and other algorithms discussed in the book are being
+added gradually, so please come back periodically.  Thus far, the
+repository contains:</p>
+
+<ul>
+
+  <li><a href="http://www.umiacs.umd.edu/~jimmylin/Cloud9/docs/content/order-inversion.html">Order inversion</a> from Chapter 3 for computing bigram
+  relative frequencies.</li>
+
+  <li><a href="http://www.umiacs.umd.edu/~jimmylin/Cloud9/docs/content/pairs-stripes.html">"Pairs"
+  and "stripes"</a> from Chapter 3 for computing the word
+  co-occurrence matrix of a large text collection.</li>
+
+  <li><a href="http://www.umiacs.umd.edu/~jimmylin/Cloud9/docs/content/pagerank.html">PageRank</a> from Chapter 4
+  as well as some more design patterns for graph algorithms not discussed in the book.</li>
+
+</ul>
+
+<h2 style="padding-top:15px">What People Are Saying</h2>
+
+<ul>
+
+  <li>Book cited in a special report on managing information in <a href="http://www.economist.com/specialreports/displaystory.cfm?story_id=15557413">The Economist</a> (February 25, 2010)</li>
+
+  <li>Design patterns mentioned by <a href="http://mir-in-action.blogspot.com/2010/04/mapreduce-algorithm-design.html">Mark Levy</a> at Last.fm (April 6, 2010)</li>
+
+  <li>Google Research <a href="http://googleresearch.blogspot.com/2010/05/recent-accomplishments-by-research.html">plugs the book</a> (May 19, 2010)</li>
+
+  <li>Mentioned in a blog post by <a href="http://www.ctctlabs.com/index.php/blog/detail/applying_data_mining_techniques_to_mapreduce/">Constant Contact Labs</a> (May 27, 2010)</li>
+
+  <li>Deepak Singh from Amazon <a href="http://mndoci.com/2010/07/02/recommendation-data-intensive-text-processing-with-mapreduce/">recommends the book</a> (July 2, 2010)</li>
+
+  <li>Used in <a href="http://www.csee.ogi.edu/~zak/cs506-pslc/">CS 506/606: Special Topics: Problem Solving with Large Clusters</a> by Izhak Shafran and Richard Sproat at Oregon Health & Science University (Spring 2010)</li>
+
+  <li>Used in a Google-supported <a href="http://net.pku.edu.cn/~course/cs402/2010/index.html">Peking University course</a> on cloud computing by Hongfei Yan and Bo Peng (Summer, 2010)</li>
+
+  <li>Used in <a href="http://www.andyli.ece.ufl.edu/teaching/eel6935/">EEL 6935: Special Topics in Cloud Computing and Storage</a> by Andy Li at the University of Florida (Fall, 2010 and Fall, 2011)</li>
+
+  <li>Used in <a href="http://courses.cs.tamu.edu/caverlee/csce689/">CSCE 689: Internet-Scale Data Management</a> by James Caverlee at Texas A&amp;M (Fall, 2010)</li>
+
+  <li>Used in <a href="http://courses.cse.tamu.edu/caverlee/csce670/">CSCE 670: Information Storage and Retrieval</a> by James Caverlee at Texas A&amp;M (Spring, 2011 and Spring, 2012)</li>
+
+  <li>Used in <a href="http://cs.ua.edu/691Vrbsky/">CS 691-001: Cloud Computing</a> by Susan Vrbsky at University of Alabama (Spring, 2011)</li>
+
+  <li>Used in <a href="http://courses.washington.edu/css534/syllabi/s11.html">CSS 534: Parallel Programming in Grid and Cloud</a> by Munehiro Fukuda at University of Washington (Spring, 2011)</li>
+
+  <li>Used in <a href="http://snap.stanford.edu/class/cs341-2011/">CS341: Advanced Topics in Data Mining</a> by Jure Leskovec, Anand Rajaraman, and Jeff Ullman at Stanford (Spring, 2011)</li>
+
+  <li>Used in <a href="http://www.eurecom.fr/~michiard/CCSS.html">Summer School on Cloud Computing: Challenges and opportunities</a> by Pietro Michiard (Summer, 2011)</li>
+
+  <li>Used in a <a href="http://net.pku.edu.cn/~course/cs402/2011/index.html">Peking University course</a> on mass data processing/cloud computing by Hongfei Yan and Bo Peng (Summer, 2011)</li>
+
+  <li>Used in <a href="http://dicta-f11.utcompling.com/">CS395T / INF385T / LIN386M: Data-Intensive Computing for Text Analysis</a> by Jason Baldridge and Matt Lease at the University of Texas, Austin (Fall, 2011)</li>
+
+  <li>Used in <a href="http://www.ccs.neu.edu/home/mirek/classes/2011-F-CS6240/index.htm">CS 6240: Parallel Data Processing in MapReduce</a> by Mirek Riedewald at Northeastern University (Fall 2011)</li>
+
+  <li>Used in <a href="http://www.cs.gmu.edu/syllabus/syllabi-fall11/CS795BarbaraD.html">CS 795 Mining Massive Datasets</a> by Daniel Barbara at George Mason University (Fall, 2011)</li>
+
+  <li>Used in <a href="http://www.cs.kent.edu/~jin/Cloud12Spring/Cloud.html">CS 4/5/6/79995: Advanced Computing Platforms for Data Processing</a> by Ruoming Jin at Kent State University (Spring 2012)</li>
+
+  <li>Used in <a href="http://beowulf.lcs.mit.edu/18.337/">18.337/6.338: Parallel Computing</a> by Alan Edelman at MIT (Fall, 2011)</li>
+
+  <li>Used in <a href="http://www.cse.buffalo.edu/~bina/cse487/fall2011/">CSE487/587 Data-Intensive Computing</a> by Bina Ramamurthy at SUNY Buffalo (Fall, 2011)</li>
+
+  <li>Used in <a href="http://www.csc.lsu.edu/~wuyj/Teaching/7481/fa11/">CSC7481/LIS 7610 - Information Retrieval Systems</a> by Yejun Wu at LSU (Fall, 2011)</li>
+
+  <li>Used in <a href="http://www.cs.brown.edu/courses/csci2950-u/f11/index.html">CSCI-2950u: Data-Intensive Scalable Computing</a> by Rodrigo Fonseca at Brown (Fall, 2011)</li>
+
+  <li>Used in <a href="http://www.cs.sunysb.edu/~rezaul/CSE590-S12.html">CSE 590 (#50569): Topics in Computer Science (Supercomputing)</a> by Rezaul A. Chowdhury at Stony Brook University (Spring 2012)</li>
+
+  <li>Used in <a href="http://www-scf.usc.edu/~csci572/">Course 572: Information Retrieval and Web Search Engines</a> by Ellis Horowitz at USC (Spring 2012)</li>
+
+</ul>
+
+    </div> <!-- /container -->
+
+    <script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/jquery.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/google-code-prettify/prettify.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-transition.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-alert.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-modal.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-dropdown.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-scrollspy.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-tab.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-tooltip.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-popover.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-button.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-collapse.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-carousel.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-typeahead.js"></script>
+    <script src="http://twitter.github.com/bootstrap/assets/js/application.js"></script>
+
+  </body>
+</html>
