@@ -1,0 +1,44 @@
+\documentclass[11pt,oneside]{book}
+\usepackage[lmargin=3cm,rmargin=3cm,tmargin=3cm,bmargin=3cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{listings}
+
+\newcommand{\ignore}[1]{}
+
+\floatstyle{plain}
+
+\hyphenation{Map-Reduce}
+\hyphenation{Page-Rank}
+\hyphenation{through-put}
+
+\begin{document}
+
+\title{\Huge \bf Data-Intensive Text Processing\\with MapReduce}
+\author{\Large \bf Jimmy Lin and Chris Dyer}
+
+\date{\vspace{5cm}Prepared \today\\
+\vspace{0.5cm} \small This is the pre-production manuscript of a book
+  in the Morgan \& Claypool Synthesis Lectures on Human Language
+  Technologies. Please cite as: Jimmy Lin and Chris
+  Dyer. Data-Intensive Text Processing with MapReduce. Morgan \&
+  Claypool Publishers, 2010.}
+
+\maketitle
+
+\tableofcontents
+
+\mainmatter
+\input{chapter1-intro}
+\input{chapter2-basics}
+\input{chapter3-design}
+\input{chapter4-indexing}
+\input{chapter5-graphs}
+\input{chapter6-em}
+\input{chapter7-conclusion}
+
+\bibliographystyle{plain}
+\bibliography{MapReduce-algorithms}
+\end{document}

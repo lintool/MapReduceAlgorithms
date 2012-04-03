@@ -1,0 +1,267 @@
+\chapter{Closing Remarks}
+\label{chapter8}
+
+The need to process enormous quantities of data has never been
+greater.  Not only are terabyte- and petabyte-scale datasets rapidly
+becoming commonplace, but there is consensus that great value lies
+buried in them, waiting to be unlocked by the right computational
+tools.  In the commercial sphere, business intelligence---driven by
+the ability to gather data from a dizzying array of sources---promises
+to help organizations better understand their customers and the
+marketplace, hopefully leading to better business decisions and
+competitive advantages.  For engineers building information processing
+tools and applications, larger datasets lead to more effective
+algorithms for a wide range of tasks, from machine translation to spam
+detection.  In the natural and physical sciences, the ability to
+analyze massive amounts of data may provide the key to unlocking the
+secrets of the cosmos or the mysteries of life.
+
+In the preceding chapters, we have shown how MapReduce can be
+exploited to solve a variety of problems related to text processing at
+scales that would have been unthinkable a few years ago.  However, no
+tool---no matter how powerful or flexible---can be perfectly adapted
+to every task, so it is only fair to discuss the limitations of the
+MapReduce programming model and survey alternatives.
+Section~\ref{chapter-conclusion:limitations} covers \emph{online
+  learning algorithms} and \emph{Monte Carlo simulations}, which are
+examples of algorithms that require maintaining global state.  As we
+have seen, this is difficult to accomplish in MapReduce.
+Section~\ref{chapter-conclusion:alternatives} discusses alternative
+programming models, and the book concludes in
+Section~\ref{chapter-conclusion:end}.
+
+\section{Limitations of MapReduce}
+\label{chapter-conclusion:limitations}
+
+As we have seen throughout this book, solutions to many interesting
+problems in text processing do not require global synchronization.  As
+a result, they can be expressed naturally in MapReduce, since map and
+reduce tasks run independently and in isolation.  However, there are
+many examples of algorithms that depend crucially on the existence of
+shared global state during processing, making them difficult to
+implement in MapReduce (since the single opportunity for global
+synchronization in MapReduce is the barrier between the map and reduce
+phases of processing).
+
+The first example is {\it online learning}.  Recall from
+Chapter~\ref{chapter6} the concept of learning as the setting of
+parameters in a statistical model.  Both EM and the gradient-based
+learning algorithms we described are instances of what are known as
+\emph{batch} learning algorithms.  This simply means that the full
+``batch'' of training data is processed before any updates to the
+model parameters are made.  On one hand, this is quite
+reasonable:\ updates are not made until the full evidence of the
+training data has been weighed against the model.  An earlier update
+would seem, in some sense, to be hasty.  However, it is generally the
+case that more frequent updates can lead to \emph{more} rapid
+convergence of the model (in terms of number of training instances
+processed), even if those updates are made by considering \emph{less}
+data~\cite{Bottou_2004}.  Thinking in terms of gradient optimization
+(see Section~\ref{chapter6_variants}), online learning algorithms can
+be understood as computing an approximation of the true gradient,
+using only a few training instances.  Although only an approximation,
+the gradient computed from a small subset of training instances is
+often quite reasonable, and the aggregate behavior of multiple updates
+tends to even out errors that are made.  In the limit, updates can be
+made after \emph{every} training instance.
+
+Unfortunately, implementing online learning algorithms in MapReduce is
+problematic.  The model parameters in a learning algorithm can be
+viewed as shared global state, which must be updated as the model is
+evaluated against training data.  All processes performing the
+evaluation (presumably the mappers) must have access to this state.
+In a batch learner, where updates occur in one or more reducers (or,
+alternatively, in the driver code), synchronization of this resource
+is enforced by the MapReduce framework.  However, with online
+learning, these updates must occur after processing smaller numbers of
+instances.  This means that the framework must be altered to support
+faster processing of smaller datasets, which goes against the design
+choices of most existing MapReduce implementations.  Since MapReduce
+was specifically optimized for batch operations over large amounts of
+data, such a style of computation would likely result in inefficient
+use of resources.  In Hadoop, for example, map and reduce tasks have
+considerable startup costs.  This is acceptable because in most
+circumstances, this cost is amortized over the processing of many
+key-value pairs.  However, for small datasets, these high startup
+costs become intolerable.  An alternative is to abandon shared global
+state and run independent instances of the training algorithm in
+parallel (on different portions of the data).  A final solution is
+then arrived at by merging individual results.  Experiments, however,
+show that the merged solution is inferior to the output of running the
+training algorithm on the entire dataset~\cite{Dredze_etal_2009}.
+
+A related difficulty occurs when running what are called \emph{Monte
+  Carlo simulations}, which are used to perform inference in
+probabilistic models where evaluating or representing the model
+exactly is impossible.  The basic idea is quite simple:\ samples are
+drawn from the random variables in the model to simulate its behavior,
+and then simple frequency statistics are computed over the samples.
+This sort of inference is particularly useful when dealing with
+so-called \emph{nonparametric models}, which are models whose
+structure is not specified in advance, but is rather inferred from
+training data.  For an illustration, imagine learning a hidden Markov
+model, but inferring the number of states, rather than having them
+specified.  Being able to parallelize Monte Carlo simulations would be
+tremendously valuable, particularly for unsupervised learning
+applications where they have been found to be far more effective than
+EM-based learning (which requires specifying the model).  Although
+recent work~\cite{Asuncion_2008} has shown that the delays in
+synchronizing sample statistics due to parallel implementations do not
+necessarily damage the inference, MapReduce offers no natural
+mechanism for managing the global shared state that would be required
+for such an implementation.
+
+The problem of global state is sufficiently pervasive that there has
+been substantial work on solutions.  One approach is to build a
+distributed datastore capable of maintaining the global state.
+However, such a system would need to be highly scalable to be used in
+conjunction with MapReduce.  Google's
+BigTable~\cite{ChangFay_etal_OSDI2006}, which is a sparse,
+distributed, persistent multidimensional sorted map built on top of
+GFS, fits the bill, and has been used in exactly this manner.
+Amazon's Dynamo~\cite{DeCandia_etal_2007}, which is a distributed
+key-value store (with a very different architecture), might also be
+useful in this respect, although it wasn't originally designed with
+such an application in mind.  Unfortunately, it is unclear if the
+open-source implementations of these two systems (HBase and Cassandra,
+respectively) are sufficiently mature to handle the low-latency and
+high-throughput demands of maintaining global state in the context of
+massively distributed processing (but recent benchmarks are
+encouraging~\cite{CooperBrian_etal_2010}).
+
+\section{Alternative Computing Paradigms}
+\label{chapter-conclusion:alternatives}
+
+Streaming algorithms~\cite{Alon_1996} represent an alternative
+programming model for dealing with large volumes of data with limited
+computational and storage resources.  This model assumes that data are
+presented to the algorithm as one or more \emph{streams} of inputs
+that are processed in order, and only once.  The model is agnostic
+with respect to the source of these streams, which could be files in a
+distributed file system, but more interestingly, data from an
+``external'' source or some other data gathering device.  Stream
+processing is very attractive for working with time-series data (news
+feeds, tweets, sensor readings, etc.), which is difficult in MapReduce
+(once again, given its batch-oriented design).  Furthermore, since
+streaming algorithms are comparatively simple (because there is only
+so much that can be done with a particular training instance), they
+can often take advantage of modern GPUs, which have a large number of
+(relatively simple) functional units~\cite{McCool_2008}.  In the
+context of text processing, streaming algorithms have been applied to
+language modeling~\cite{Levenberg_2009}, translation
+modeling~\cite{Levenberg_2010}, and detecting the first mention of
+news event in a stream~\cite{Petrovic_2010}.
+
+The idea of stream processing has been generalized in the Dryad
+framework as arbitrary dataflow
+graphs~\cite{Isard_etal_2007,YuYuan_etal_OSDI2008}.  A Dryad job is a
+directed acyclic graph where each vertex represents
+developer-specified computations and edges represent data channels
+that capture dependencies.  The dataflow graph is a logical
+computation graph that is automatically mapped onto physical resources
+by the framework.  At runtime, channels are used to transport partial
+results between vertices, and can be realized using files, TCP pipes,
+or shared memory.
+
+Another system worth mentioning is Pregel~\cite{Malewicz_etal_2009},
+which implements a programming model inspired by Valiant's Bulk
+Synchronous Parallel (BSP) model~\cite{Valiant_CACM1990}.  Pregel was
+specifically designed for large-scale graph algorithms, but
+unfortunately there are few published details at present.  However, a
+longer description is anticipated in a forthcoming
+paper~\cite{Malewicz_etal_SIGMOD2010}.
+
+What is the significance of these developments?  The power of
+MapReduce derives from providing an abstraction that allows developers
+to harness the power of large clusters.  As anyone who has taken an
+introductory computer science course would know, abstractions manage
+complexity by hiding details and presenting well-defined behaviors to
+users of those abstractions.  This process makes certain tasks easier,
+but others more difficult, if not impossible.  MapReduce is certainly
+no exception to this generalization, and one of the goals of this book
+has been to give the reader a better understanding of what's easy to
+do in MapReduce and what its limitations are.  But of course, this
+begs the obvious question:\ What other abstractions are available in
+the massively-distributed datacenter environment?  Are there more
+appropriate computational models that would allow us to tackle classes
+of problems that are difficult for MapReduce?
+
+Dryad and Pregel are alternative answers to these questions.  They
+share in providing an abstraction for large-scale distributed
+computations, separating the {\it what} from the {\it how} of
+computation and isolating the developer from the details of concurrent
+programming.  They differ, however, in how distributed computations
+are conceptualized:\ functional-style programming, arbitrary
+dataflows, or BSP.  These conceptions represent different tradeoffs
+between simplicity and expressivity:\ for example, Dryad is more
+flexible than MapReduce, and in fact, MapReduce can be trivially
+implemented in Dryad.  However, it remains unclear, at least at
+present, which approach is more appropriate for different classes of
+applications.  Looking forward, we can certainly expect the
+development of new models and a better understanding of existing ones.
+MapReduce is not the end, and perhaps not even the best.  It is merely
+the first of many approaches to harness large-scaled distributed
+computing resources.
+
+Even within the Hadoop/MapReduce ecosystem, we have already observed
+the development of alternative approaches for expressing distributed
+computations.  For example, there is a proposal to add a third {\it
+  merge} phase after map and reduce to better support relational
+operations~\cite{YangHungchih_etal_SIGMOD2007}.
+Pig~\cite{Olston_etal_SIGMOD2008}, which was inspired by Google's
+Sawzall~\cite{Pike_etal_2005}, can be described as a data analytics
+platform that provides a lightweight scripting language for
+manipulating large datasets.  Although Pig scripts (in a language
+called {\it Pig Latin}) are ultimately converted into Hadoop jobs by
+Pig's execution engine, constructs in the language allow developers to
+specify data transformations (filtering, joining, grouping, etc.)\ at
+a much higher level.  Similarly, Hive~\cite{Hammerbacher_2009},
+another open-source project, provides an abstraction on top of Hadoop
+that allows users to issue SQL queries against large relational
+datasets stored in HDFS.  Hive queries (in HiveQL) ``compile down'' to
+Hadoop jobs by the Hive query engine.  Therefore, the system provides
+a data analysis tool for users who are already comfortable with
+relational databases, while simultaneously taking advantage of
+Hadoop's data processing capabilities.
+
+\section{MapReduce and Beyond}
+\label{chapter-conclusion:end}
+
+The capabilities necessary to tackle large-data problems are already
+within reach by many and will continue to become more accessible over
+time.  By scaling ``out'' with commodity servers, we have been able to
+economically bring large clusters of machines to bear on problems of
+interest.  But this has only been possible with corresponding
+innovations in software and how computations are organized on a
+massive scale.  Important ideas include:\ moving processing to the
+data, as opposed to the other way around; also, emphasizing throughput
+over latency for batch tasks by sequential scans through data,
+avoiding random seeks.  Most important of all, however, is the
+development of new abstractions that hide system-level details from
+the application developer.  These abstractions are at the level of
+entire datacenters, and provide a model using which programmers can
+reason about computations at a massive scale without being distracted
+by fine-grained concurrency management, fault tolerance, error
+recovery, and a host of other issues in distributed computing.  This,
+in turn, paves the way for innovations in scalable algorithms that can
+run on petabyte-scale datasets.
+
+None of these points are new or particularly
+earth-shattering---computer scientists have known about these
+principles for decades.  However, MapReduce is unique in that, for the
+first time, all these ideas came together and were demonstrated on
+practical problems at scales unseen before, both in terms of
+computational resources and the impact on the daily lives of millions.
+The engineers at Google deserve a tremendous amount of credit for
+that, and also for sharing their insights with the rest of the world.
+Furthermore, the engineers and executives at Yahoo deserve a lot of
+credit for starting the open-source Hadoop project, which has made
+MapReduce accessible to everyone and created the vibrant software
+ecosystem that flourishes today.  Add to that the advent of utility
+computing, which eliminates capital investments associated with
+cluster infrastructure, large-data processing capabilities are now
+available ``to the masses'' with a relatively low barrier to entry.
+
+The golden age of massively distributed computing is {\it finally}
+upon us.
+
