@@ -1,5 +1,6 @@
-\documentclass[11pt,oneside]{book}
-\usepackage[lmargin=3cm,rmargin=3cm,tmargin=3cm,bmargin=3cm]{geometry}
+\documentclass[onecolumn]{memoir}
+%\documentclass[11pt,oneside]{book}
+%\usepackage[lmargin=3cm,rmargin=3cm,tmargin=3cm,bmargin=3cm]{geometry}
 \usepackage{graphicx}
 \usepackage{amsfonts}
 \usepackage{algorithm}
@@ -16,21 +17,37 @@
 
 \begin{document}
 
-\title{\Huge \bf Data-Intensive Text Processing\\with MapReduce}
-\author{\Large \bf Jimmy Lin and Chris Dyer}
+\frontmatter %
 
-\date{\vspace{5cm}Prepared \today\\
-\vspace{0.5cm} \small This is the pre-production manuscript of a book
-  in the Morgan \& Claypool Synthesis Lectures on Human Language
-  Technologies. Please cite as: Jimmy Lin and Chris
-  Dyer. Data-Intensive Text Processing with MapReduce. Morgan \&
-  Claypool Publishers, 2010.}
+\begin{center}
+{\Huge \textbf{Data-Intensive Text Processing\\with MapReduce}}
+\end{center}
 
-\maketitle
+\vspace{2.5cm}
+
+\begin{center}
+{\Large \textbf{Jimmy Lin and Chris Dyer}} \\
+\vspace{1cm}Draft of \today
+\end{center}
+
+
+\vspace{5cm}
+
+\noindent This is the post-production manuscript of a book in the
+Morgan \& Claypool Synthesis Lectures on Human Language Technologies
+(with errata, additions, elaborations, etc.). \\
+
+\noindent Please cite as:\ Jimmy Lin and Chris Dyer. Data-Intensive
+Text Processing with MapReduce. Morgan \& Claypool Publishers, 2010. \\
+
+\noindent Refer to \texttt{http://mapreduce.cc/} for more details.
+
+\clearpage %
 
 \tableofcontents
 
 \mainmatter
+
 \input{chapter1-intro}
 \input{chapter2-basics}
 \input{chapter3-design}

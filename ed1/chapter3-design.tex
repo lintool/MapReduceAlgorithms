@@ -39,15 +39,15 @@ execution, for example:
 
 \begin{itemize}
 
-\item {\it Where} a mapper or reducer runs (i.e., on which node in the
+\item \emph{Where} a mapper or reducer runs (i.e., on which node in the
   cluster).
 
-\item {\it When} a mapper or reducer begins or finishes.
+\item \emph{When} a mapper or reducer begins or finishes.
 
-\item {\it Which} input key-value pairs are processed by a specific
+\item \emph{Which} input key-value pairs are processed by a specific
   mapper.
 
-\item {\it Which} intermediate key-value pairs are processed by a
+\item \emph{Which} intermediate key-value pairs are processed by a
   specific reducer.
 
 \end{itemize}
@@ -141,7 +141,7 @@ The chapter is organized as follows:
 
 \item Section~\ref{chapter3:joins} covers the topic of performing
   joins on relational datasets and presents three different
-  approaches:\ {\it reduce-side}, {\it map-side}, and {\it
+  approaches:\ \emph{reduce-side}, \emph{map-side}, and \emph{
     memory-backed} joins.
 
 \end{itemize}
@@ -187,8 +187,8 @@ process the output of mappers.  In this example, the combiners
 aggregate term counts across the documents processed by each map task.
 This results in a reduction in the number of intermediate key-value
 pairs that need to be shuffled across the network---from the order of
-{\it total} number of terms in the collection to the order of the
-number of {\it unique} terms in the collection.\footnote{More
+\emph{total} number of terms in the collection to the order of the
+number of \emph{unique} terms in the collection.\footnote{More
   precisely, if the combiners take advantage of all opportunities for
   local aggregation, the algorithm would generate at most $m \times V$
   intermediate key-value pairs, where $m$ is the number of mappers and
@@ -198,7 +198,7 @@ number of {\it unique} terms in the collection.\footnote{More
   to the Zipfian nature of term distributions, most terms will not be
   observed by most mappers (for example, terms that occur only once
   will by definition only be observed by one mapper).  On the other
-  hand, combiners in Hadoop are treated as {\it optional}
+  hand, combiners in Hadoop are treated as \emph{optional}
   optimizations, so there is no guarantee that the execution framework
   will take advantage of all opportunities for partial aggregation.}
 
@@ -238,7 +238,7 @@ Figure~\ref{figure:chapter3:word-count:basic} and therefore is not
 repeated).  An associative array (i.e., Map in Java) is introduced
 inside the mapper to tally up term counts within a single
 document:\ instead of emitting a key-value pair for each term in the
-document, this version emits a key-value pair for each {\it unique}
+document, this version emits a key-value pair for each \emph{unique}
 term in the document.  Given that some words appear frequently within
 a document (for example, a document about dogs is likely to have many
 occurrences of the word ``dog''), this can yield substantial savings
@@ -281,12 +281,12 @@ method is called, which is an API hook for user-specified code.  In
 this case, we initialize an associative array for holding term counts.
 Since it is possible to preserve state across multiple calls of the
 \textsc{Map} method (for each input key-value pair), we can continue
-to accumulate partial term counts in the associative array {\it
+to accumulate partial term counts in the associative array \emph{
   across} multiple documents, and emit key-value pairs only when the
 mapper has processed all documents.  That is, emission of intermediate
 data is deferred until the \textsc{Close} method in the pseudo-code.
 Recall that this API hook provides an opportunity to execute
-user-specified code {\it after} the \textsc{Map} method has been
+user-specified code \emph{after} the \textsc{Map} method has been
 applied to all input key-value pairs of the input data split to which
 the map task was assigned.
 
@@ -300,7 +300,7 @@ the map task was assigned.
     \EndProcedure
     \Procedure{Map}{$\textrm{docid }a, \textrm{doc }d$}
     \ForAll{$\textrm{term }t \in \textrm{doc }d$}
-    \State $H\{t\} \gets H\{t\} + 1$\Comment{Tally counts {\it across} documents}
+    \State $H\{t\} \gets H\{t\} + 1$\Comment{Tally counts \emph{across} documents}
     \EndFor
     \EndProcedure
     \Procedure{Close}{}
@@ -335,7 +335,7 @@ it exactly takes place.  In contrast, the semantics of the combiner is
 underspecified in MapReduce.  For example, Hadoop makes no guarantees
 on how many times the combiner is applied, or that it is even applied
 at all.  The combiner is provided as a semantics-preserving
-optimization to the execution framework, which has the {\it option} of
+optimization to the execution framework, which has the \emph{option} of
 using it, perhaps multiple times, or not at all (or even in the reduce
 phase).  In some cases (although not in this particular example), such
 indeterminism is unacceptable, which is exactly why programmers often
@@ -388,7 +388,7 @@ Figure~\ref{figure:chapter3:word-count:outer-hash} will scale only up
 to a point, beyond which the associative array holding the partial
 term counts will no longer fit in memory.\footnote{A few more
   details:\ note what matters is that the partial term counts
-  encountered within particular {\it input split} fits into memory.
+  encountered within particular \emph{input split} fits into memory.
   However, as collection sizes increase, one will often want to
   increase the input split size to limit the growth of the number of
   map tasks (in order to reduce the number of distinct copy operations
@@ -397,7 +397,7 @@ term counts will no longer fit in memory.\footnote{A few more
 One common solution to limiting memory usage when using the in-mapper
 combining technique is to ``block'' input key-value pairs and
 ``flush'' in-memory data structures periodically.  The idea is
-simple:\ instead of emitting intermediate data only after {\it every}
+simple:\ instead of emitting intermediate data only after \emph{every}
 key-value pair has been processed, emit partial results after
 processing every $n$ key-value pairs.  This is straightforwardly
 implemented with a counter variable that keeps track of the number of
@@ -414,7 +414,7 @@ finite resources, but since the tasks are not aware of each other, it
 is difficult to coordinate resource consumption effectively.  In
 practice, however, one often encounters diminishing returns in
 performance gains with increasing buffer sizes, such that it is not
-worth the effort to search for an {\it optimal} buffer size (personal
+worth the effort to search for an \emph{optimal} buffer size (personal
 communication, Jeff Dean).
 
 In MapReduce algorithms, the extent to which efficiency can be
@@ -447,7 +447,7 @@ Hadoop are viewed as optional optimizations, the correctness of the
 algorithm cannot depend on computations performed by the combiner or
 depend on them even being run at all.  In any MapReduce program, the
 reducer input key-value type must match the mapper output key-value
-type:\ this implies that the combiner input {\it and} output key-value
+type:\ this implies that the combiner input \emph{and} output key-value
 types must match the mapper output key-value type (which is the same
 as the reducer input key-value type).  In cases where the reduce
 computation is both commutative and associative, the reducer can also
@@ -521,7 +521,7 @@ the mean of those values.  As a concrete example, we know that:
 of numbers is not the same as the mean of the set of numbers.
 Therefore, this approach would not produce the correct
 result.\footnote{There is, however, one special case in which using
-  reducers as combiners {\it would} produce the correct result:\ if
+  reducers as combiners \emph{would} produce the correct result:\ if
   each combiner computed the mean of equal-size subsets of the values.
   However, since such fine-grained control over the combiners is
   impossible in MapReduce, such a scenario is highly unlikely.}
@@ -771,7 +771,7 @@ algorithms.
 Beyond text processing, problems in many application domains share
 similar characteristics.  For example, a large retailer might analyze
 point-of-sale transaction records to identify correlated product
-purchases (e.g., customers who buy {\it this} tend to also buy {\it
+purchases (e.g., customers who buy \emph{this} tend to also buy \emph{
   that}), which would assist in inventory management and product
 placement on store shelves.  Similarly, an intelligence analyst might
 wish to identify associations between re-occurring financial
@@ -786,10 +786,10 @@ or even billions of words in web-scale collections.\footnote{The size
   of the vocabulary depends on the definition of a ``word'' and
   techniques (if any) for corpus pre-processing.  One common strategy
   is to replace all rare words (below a certain frequency) with a
-  ``special'' token such as {\tt $<$UNK$>$} (which stands for
+  ``special'' token such as \texttt{$<$UNK$>$} (which stands for
   ``unknown'') to model out-of-vocabulary words.  Another technique
-  involves replacing numeric digits with {\tt \#}, such that 1.32 and
-  1.19 both map to the same token ({\tt \#.\#\#}).}  The computation
+  involves replacing numeric digits with \texttt{\#}, such that 1.32 and
+  1.19 both map to the same token (\texttt{\#.\#\#}).}  The computation
 of the word co-occurrence matrix is quite simple if the entire matrix
 fits into memory---however, in the case where the matrix is too big to
 fit in memory, a na\"{i}ve implementation on a single machine can be
@@ -1031,7 +1031,7 @@ Figure~\ref{figure:chapter3:pairs-vs-stripes-ec2} (left) shows the
 running time of the stripes algorithm (on the same corpus, with same
 setup as before), on varying cluster sizes, from 20 slave ``small''
 instances all the way up to 80 slave ``small'' instances (along the
-{\it x}-axis).  Running times are shown with solid squares.
+\emph{x}-axis).  Running times are shown with solid squares.
 Figure~\ref{figure:chapter3:pairs-vs-stripes-ec2} (right) recasts the
 same results to illustrate scaling characteristics.  The circles plot
 the relative size and speedup of the EC2 experiments, with respect to
@@ -1049,8 +1049,8 @@ broadly useful and frequently observed in a variety of applications.
 
 To conclude, it is worth noting that the pairs and stripes approaches
 represent endpoints along a continuum of possibilities.  The pairs
-approach individually records {\it each} co-occurring event, while the
-stripes approach records {\it all} co-occurring events with respect a
+approach individually records \emph{each} co-occurring event, while the
+stripes approach records \emph{all} co-occurring events with respect a
 conditioning event.  A middle ground might be to record a subset of
 the co-occurring events with respect to a conditioning event.  We
 might divide up the entire vocabulary into $b$ buckets (e.g., via
@@ -1176,7 +1176,7 @@ the reducer can directly compute the relative frequencies.
 
 \begin{figure}[t]
 \begin{tabular}{lll}
-{\bf key} & {\bf values} &  \\
+\textbf{key} & \textbf{values} &  \\
 $(\textrm{dog}, \ast)$        & $[$6327, 8514, $\ldots$$]$ & compute marginal: $\sum_{w'}{N(\textrm{dog},w')} = 42908$\\
 $(\textrm{dog}, \textrm{aardvark})$ & $[$2,1$]$    & $f(\textrm{aardvark}|\textrm{dog}) = 3/42908$ \\
 $(\textrm{dog}, \textrm{aardwolf})$ & $[$1$]$      & $f(\textrm{aardwolf}|\textrm{dog}) = 1/42908$ \\
@@ -1404,14 +1404,14 @@ complex analytical queries that are prevalent in such an environment,
 it makes sense to examine MapReduce algorithms for manipulating
 relational data.  This section focuses specifically on performing
 relational joins in MapReduce.  We should stress here that even though
-Hadoop has been applied to process relational data, Hadoop {\it is not
+Hadoop has been applied to process relational data, Hadoop \emph{is not
   a database}.  There is an ongoing debate between advocates of
 parallel databases and proponents of MapReduce regarding the merits of
 both approaches for OLAP-type workloads.  Dewitt and Stonebraker, two
 well-known figures in the database community, famously decried
 MapReduce as ``a major step backwards'' in a controversial blog
-post.\footnote{\tt
-  http://databasecolumn.vertica.com/database-innovation/mapreduce-a-major-step-backwards/}
+post.\footnote{\texttt{
+  http://databasecolumn.vertica.com/database-innovation/mapreduce-a-major-step-backwards/}}
 With colleagues, they ran a series of benchmarks that demonstrated the
 supposed superiority of column-oriented parallel databases over
 Hadoop~\cite{Pavlo_etal_SIGMOD2009,Stonebraker_etal_CACM2010}. However,
@@ -1470,7 +1470,7 @@ for example, to break down online activity in terms of demographics.
 
 \subsection{Reduce-Side Join}
 
-The first approach to relational joins is what's known as a {\it
+The first approach to relational joins is what's known as a \emph{
   reduce-side} join.  The idea is quite simple:\ we map over both
 datasets and emit the join key as the intermediate key, and the tuple
 itself as the intermediate value.  Since MapReduce guarantees that all
@@ -1480,7 +1480,7 @@ join operation.  This approach is known as a parallel sort-merge join
 in the database community~\cite{Schneider_DeWitt_SIGMOD1989}.  In more
 detail, there are three different cases to consider.
 
-The first and simplest is a {\it one-to-one} join, where at most one
+The first and simplest is a \emph{one-to-one} join, where at most one
 tuple from $S$ and one tuple from $T$ share the same join key (but
 it may be the case that no tuple from $S$ shares the join key with a
 tuple from $T$, or vice versa).  In this case, the algorithm sketched
@@ -1508,7 +1508,7 @@ there is only one value associated with a key, this means that no
 tuple in the other dataset shares the join key, so the reducer does
 nothing.
 
-Let us now consider the {\it one-to-many} join.  Assume that tuples in
+Let us now consider the \emph{one-to-many} join.  Assume that tuples in
 $S$ have unique join keys (i.e., $k$ is the primary key in $S$), so
 that $S$ is the ``one'' and $T$ is the ``many''.  The above algorithm
 will still work, but when processing each key in the reducer, we have
@@ -1555,7 +1555,7 @@ performs the sorting, there is no need to buffer tuples (other than
 the single one from $S$).  Thus, we have eliminated the scalability
 bottleneck.
 
-Finally, let us consider the {\it many-to-many} join case.  Assuming
+Finally, let us consider the \emph{many-to-many} join case.  Assuming
 that $S$ is the smaller dataset, the above algorithm works as well.
 Consider what happens at the reducer:
 
@@ -1580,21 +1580,21 @@ the smaller dataset comes first).
 The basic idea behind the reduce-side join is to repartition the two
 datasets by the join key.  The approach isn't particularly efficient
 since it requires shuffling both datasets across the network.  This
-leads us to the {\it map-side} join.
+leads us to the \emph{map-side} join.
 
 \subsection{Map-Side Join}
 
 Suppose we have two datasets that are both sorted by the join key.  We
 can perform a join by scanning through both datasets
 simultaneously---this is known as a merge join in the database
-community.  We can parallelize this by partitioning and sorting {\it
+community.  We can parallelize this by partitioning and sorting \emph{
   both} datasets in the same way.  For example, suppose $S$ and $T$
 were both divided into ten files, partitioned in the same manner by
 the join key.  Further suppose that in each file, the tuples were
 sorted by the join key.  In this case, we simply need to merge join
 the first file of $S$ with the first file of $T$, the second file with
 $S$ with the second file of $T$, etc.  This can be accomplished in
-parallel, in the map phase of a MapReduce job---hence, a {\it
+parallel, in the map phase of a MapReduce job---hence, a \emph{
   map-side} join.  In practice, we map over one of the datasets (the
 larger one) and inside the mapper read the corresponding part of the
 other dataset to perform the merge join.\footnote{Note that this
@@ -1605,7 +1605,7 @@ further processing.
 A map-side join is far more efficient than a reduce-side join since
 there is no need to shuffle the datasets over the network.  But is it
 realistic to expect that the stringent conditions required for
-map-side joins are satisfied?  In many cases, {\it yes}.  The reason
+map-side joins are satisfied?  In many cases, \emph{yes}.  The reason
 is that relational joins happen within the broader context of a
 workflow, which may include multiple steps.  Therefore, the datasets
 that are to be joined may be the output of previous processes (either
@@ -1614,7 +1614,7 @@ and relatively static (both reasonable assumptions in a mature
 workflow), we can engineer the previous processes to generate
 output sorted and partitioned in a way that makes efficient map-side
 joins possible (in MapReduce, by using a custom partitioner and
-controlling the sort order of key-value pairs).  For {\it ad hoc} data
+controlling the sort order of key-value pairs).  For \emph{ad hoc} data
 analysis, reduce-side joins are a more general, albeit less efficient,
 solution.  Consider the case where datasets have multiple keys that
 one might wish to join on---then no matter how the data is organized,
@@ -1677,7 +1677,7 @@ keys match.\footnote{In order to achieve good performance in accessing
   before making synchronous requests (to amortize latency over many
   requests) or to rely on asynchronous requests.}  The open-source
 caching system memcached can be used for exactly this purpose, and
-therefore we've dubbed this approach {\it memcached} join.  For more
+therefore we've dubbed this approach \emph{memcached} join.  For more
 information, this approach is detailed in a technical
 report~\cite{Lin_etal_TR2009}.
 

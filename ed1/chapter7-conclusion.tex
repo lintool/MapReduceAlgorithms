@@ -43,7 +43,7 @@ implement in MapReduce (since the single opportunity for global
 synchronization in MapReduce is the barrier between the map and reduce
 phases of processing).
 
-The first example is {\it online learning}.  Recall from
+The first example is \emph{online learning}.  Recall from
 Chapter~\ref{chapter6} the concept of learning as the setting of
 parameters in a statistical model.  Both EM and the gradient-based
 learning algorithms we described are instances of what are known as
@@ -188,7 +188,7 @@ of problems that are difficult for MapReduce?
 
 Dryad and Pregel are alternative answers to these questions.  They
 share in providing an abstraction for large-scale distributed
-computations, separating the {\it what} from the {\it how} of
+computations, separating the \emph{what} from the \emph{how} of
 computation and isolating the developer from the details of concurrent
 programming.  They differ, however, in how distributed computations
 are conceptualized:\ functional-style programming, arbitrary
@@ -205,14 +205,14 @@ computing resources.
 
 Even within the Hadoop/MapReduce ecosystem, we have already observed
 the development of alternative approaches for expressing distributed
-computations.  For example, there is a proposal to add a third {\it
+computations.  For example, there is a proposal to add a third \emph{
   merge} phase after map and reduce to better support relational
 operations~\cite{YangHungchih_etal_SIGMOD2007}.
 Pig~\cite{Olston_etal_SIGMOD2008}, which was inspired by Google's
 Sawzall~\cite{Pike_etal_2005}, can be described as a data analytics
 platform that provides a lightweight scripting language for
 manipulating large datasets.  Although Pig scripts (in a language
-called {\it Pig Latin}) are ultimately converted into Hadoop jobs by
+called \emph{Pig Latin}) are ultimately converted into Hadoop jobs by
 Pig's execution engine, constructs in the language allow developers to
 specify data transformations (filtering, joining, grouping, etc.)\ at
 a much higher level.  Similarly, Hive~\cite{Hammerbacher_2009},
@@ -262,6 +262,6 @@ computing, which eliminates capital investments associated with
 cluster infrastructure, large-data processing capabilities are now
 available ``to the masses'' with a relatively low barrier to entry.
 
-The golden age of massively distributed computing is {\it finally}
+The golden age of massively distributed computing is \emph{finally}
 upon us.
 

@@ -88,7 +88,7 @@ available for a variety of genres ranging from blogs to newswire text.
 For researchers who wish to explore web-scale retrieval, there is the
 ClueWeb09 collection that contains one billion web pages in ten
 languages (totaling 25 terabytes) crawled by Carnegie Mellon
-University in early 2009.\footnote{{\tt
+University in early 2009.\footnote{\texttt{
     http://boston.lti.cs.cmu.edu/Data/clueweb09/}} Obtaining access to
 these standard collections is usually as simple as signing an
 appropriate data license from the distributor of the collection,
@@ -179,18 +179,18 @@ readings.
 
 In its basic form, an inverted index consists of postings lists, one
 associated with each term that appears in the collection.\footnote{In
-  information retrieval parlance, {\it term} is preferred over {\it
+  information retrieval parlance, \emph{term} is preferred over \emph{
     word} since documents are processed (e.g., tokenization and
   stemming) into basic units that are often not words in the
   linguistic sense.} The structure of an inverted index is illustrated
 in Figure~\ref{chapter-indexing:inverted-index}.  A postings list is
 comprised of individual postings, each of which consists of a document
-id and a {\it payload}---information about occurrences of the term in
+id and a \emph{payload}---information about occurrences of the term in
 the document.  The simplest payload is\ldots nothing!  For simple
 boolean retrieval, no additional information is needed in the posting
 other than the document id; the existence of the posting itself
 indicates that presence of the term in the document.  The most common
-payload, however, is term frequency ({\it tf}), or the number of times
+payload, however, is term frequency (\emph{tf}), or the number of times
 the term occurs in the document.  More complex payloads include
 positions of every occurrence of the term in the document (to support
 phrase queries and document scoring based on term proximity),
@@ -212,19 +212,19 @@ the index as well.
 \end{center}
 \caption{Simple illustration of an inverted index.  Each term is
   associated with a list of postings.  Each posting is comprised of a
-  document id and a payload, denoted by {\it p} in this case.  An
+  document id and a payload, denoted by \emph{p} in this case.  An
   inverted index provides quick access to documents ids that contain a
   term.}
 \label{chapter-indexing:inverted-index}
 \end{figure}
 
 In the example shown in Figure~\ref{chapter-indexing:inverted-index},
-we see that {\it term}$_1$ occurs in $\{d_1, d_5, d_6, d_{11},
-\ldots\}$, {\it term}$_2$ occurs in $\{d_{11}, d_{23}, d_{59}, d_{84},
-\ldots\}$, and {\it term}$_3$ occurs in $\{d_1, d_4, d_{11}, d_{19},
+we see that \emph{term}$_1$ occurs in $\{d_1, d_5, d_6, d_{11},
+\ldots\}$, \emph{term}$_2$ occurs in $\{d_{11}, d_{23}, d_{59}, d_{84},
+\ldots\}$, and \emph{term}$_3$ occurs in $\{d_1, d_4, d_{11}, d_{19},
 \ldots\}$.  In an actual implementation, we assume that documents can
-be identified by a unique integer ranging from 1 to {\it n}, where
-{\it n} is the total number of documents.\footnote{It is preferable to
+be identified by a unique integer ranging from 1 to \emph{n}, where
+\emph{n} is the total number of documents.\footnote{It is preferable to
   start numbering the documents at one since it is not possible to
   code zero with many common compression schemes used in information
   retrieval; see Section~\ref{chapter-indexing:index:compression}.}
@@ -246,8 +246,8 @@ set.  In the simplest case, boolean retrieval involves set operations
 lists, which can be accomplished very efficiently since the postings
 are sorted by document id.  In the general case, however,
 query--document scores must be computed.  Partial document scores are
-stored in structures called {\it accumulators}.  At the end (i.e.,
-once all postings have been processed), the top {\it k} documents are
+stored in structures called \emph{accumulators}.  At the end (i.e.,
+once all postings have been processed), the top \emph{k} documents are
 then extracted to yield a ranked list of results for the user.  Of
 course, there are many optimization strategies for query evaluation
 (both approximate and exact) that reduce the number of postings a
@@ -374,7 +374,7 @@ the correct byte offset position in that file.
 \end{center}
 \caption{Simple illustration of the baseline inverted indexing
   algorithm in MapReduce with three mappers and two reducers.
-  Postings are shown as pairs of boxes ({\it docid}, {\it tf}).}
+  Postings are shown as pairs of boxes (\emph{docid}, \emph{tf}).}
 \label{chapter-indexing:MR-baseline}
 \end{figure}
 
@@ -561,11 +561,11 @@ six bytes per posting.  Using this scheme, the entire inverted index
 would be about as large as the collection itself.  Fortunately, we can
 do significantly better.
 
-The first trick is to encode {\it differences} between document ids as
+The first trick is to encode \emph{differences} between document ids as
 opposed to the document ids themselves.  Since the postings are sorted
-by document ids, the differences (called {\it d}-gaps) must be
+by document ids, the differences (called \emph{d}-gaps) must be
 positive integers greater than zero.  The above postings list,
-represented with {\it d}-gaps, would be:
+represented with \emph{d}-gaps, would be:
 
 \begin{quote}
 $[ (5, 2), (2, 3), (5, 1), (37, 1), (2, 2), \ldots]$
@@ -573,20 +573,20 @@ $[ (5, 2), (2, 3), (5, 1), (37, 1), (2, 2), \ldots]$
 
 \noindent Of course, we must actually encode the first document id.
 We haven't lost any information, since the original document ids can
-be easily reconstructed from the {\it d}-gaps.  However, it's not
+be easily reconstructed from the \emph{d}-gaps.  However, it's not
 obvious that we've reduced the space requirements either, since the
-largest possible {\it d}-gap is one less than the number of documents
+largest possible \emph{d}-gap is one less than the number of documents
 in the collection.
 
 This is where the second trick comes in, which is to represent the
-{\it d}-gaps in a way such that it takes less space for smaller
+\emph{d}-gaps in a way such that it takes less space for smaller
 numbers.  Similarly, we want to apply the same techniques to compress
 the term frequencies, since for the most part they are also small
 values.  But to understand how this is done, we need to take a slight
 detour into compression techniques, particularly for coding integers.
 
-Compression, in general, can be characterized as either {\it lossless}
-or {\it lossy}:\ it's fairly obvious that loseless compression is
+Compression, in general, can be characterized as either \emph{lossless}
+or \emph{lossy}:\ it's fairly obvious that loseless compression is
 required in this context.  To start, it is important to understand
 that all compression techniques represent a time--space tradeoff.
 That is, we reduce the amount of space on disk necessary to store
@@ -594,22 +594,22 @@ data, but at the cost of extra processor cycles that must be spent
 coding and decoding data.  Therefore, it is possible that compression
 reduces size but also slows processing.  However, if the two factors
 are properly balanced (i.e., decoding speed can keep up with disk
-bandwidth), we can achieve the best of both worlds:\ smaller {\it and}
+bandwidth), we can achieve the best of both worlds:\ smaller \emph{and}
 faster.
 
 \subsection{Byte-Aligned and Word-Aligned Codes}
 
 In most programming languages, an integer is encoded in four bytes and
 holds a value between 0 and $2^{32}-1$, inclusive. We limit our
-discussion to {\it unsigned} integers, since {\it d}-gaps are always
+discussion to \emph{unsigned} integers, since \emph{d}-gaps are always
 positive (and greater than zero).  This means that 1 and 4,294,967,295
-both occupy four bytes.  Obviously, encoding {\it d}-gaps this way
+both occupy four bytes.  Obviously, encoding \emph{d}-gaps this way
 doesn't yield any reductions in size.
 
 A simple approach to compression is to only use as many bytes as is
 necessary to represent the integer.  This is known as variable-length
 integer coding (varInt for short) and accomplished by using the high
-order bit of every byte as the {\it continuation bit}, which is set to
+order bit of every byte as the \emph{continuation bit}, which is set to
 one in the last byte and zero elsewhere.  As a result, we have 7 bits
 per byte for coding the value, which means that $0 \leq n < 2^7$ can
 be expressed with 1 byte, $2^{7} \leq n < 2^{14}$ with 2 bytes,
@@ -636,11 +636,11 @@ where one code word ends and the next begins.  However, the downside
 of varInt coding is that decoding involves lots of bit operations
 (masks, shifts).  Furthermore, the continuation bit sometimes results
 in frequent branch mispredicts (depending on the actual distribution
-of {\it d}-gaps), which slows down processing.
+of \emph{d}-gaps), which slows down processing.
 
 A variant of the varInt scheme was described by Jeff Dean in a keynote
-talk at the WSDM 2009 conference.\footnote{\tt
-  http://research.google.com/people/jeff/WSDM09-keynote.pdf} The
+talk at the WSDM 2009 conference.\footnote{\texttt{
+  http://research.google.com/people/jeff/WSDM09-keynote.pdf}} The
 insight is to code groups of four integers at a time.  Each group
 begins with a prefix byte, divided into four 2-bit values that specify
 the byte length of each of the following integers.  For example, the
@@ -666,7 +666,7 @@ sense to store postings in increments of 16-bit, 32-bit, or 64-bit
 machine words.  Anh and Moffat~\cite{Anh_Moffat_2005} presented
 several word-aligned coding methods, one of which is called Simple-9,
 based on 32-bit words.  In this coding scheme, four bits in each
-32-bit word are reserved as a {\it selector}.  The remaining 28 bits
+32-bit word are reserved as a \emph{selector}.  The remaining 28 bits
 are used to code actual integer values.  Now, there are a variety of
 ways these 28 bits can be divided to code one or more integers:\ 28
 bits can be used to code one 28-bit integer, two 14-bit integers,
@@ -685,7 +685,7 @@ bits appropriately.
 
 The advantage of byte-aligned and word-aligned codes is that they can
 be coded and decoded quickly.  The downside, however, is that they
-{\it must} consume multiples of eight bits, even when fewer bits might
+\emph{must} consume multiples of eight bits, even when fewer bits might
 suffice (the Simple-9 scheme gets around this by packing multiple
 integers into a 32-bit word, but even then, bits are often wasted).
 In bit-aligned codes, on the other hand, code words can occupy any
@@ -720,10 +720,10 @@ prefix code, such that a sequence of bits:
 One of the simplest prefix codes is the unary code.  An integer $x>0$
 is coded as $x-1$ one bits followed by a zero bit.  Note that unary
 codes do not allow the representation of zero, which is fine since
-{\it d}-gaps and term frequencies should never be zero.\footnote{As a
+\emph{d}-gaps and term frequencies should never be zero.\footnote{As a
   note, some sources describe slightly different formulations of the
   same coding scheme.  Here, we adopt the conventions used in the
-  classic IR text {\it Managing Gigabytes}~\cite{Witten_etal_1999}.}
+  classic IR text \emph{Managing Gigabytes}~\cite{Witten_etal_1999}.}
 As an example, 4 in unary code is 1110.  With unary code we can code
 $x$ in $x$ bits, which although economical for small values, becomes
 inefficient for even moderately large values.  Unary codes are rarely
@@ -811,7 +811,7 @@ two, then coding and decoding can be handled more efficiently (needing
 only bit shifts and bit masks, as opposed to multiplication and
 division).  These are known as Rice codes.
 
-Researchers have shown that Golomb compression works well for {\it
+Researchers have shown that Golomb compression works well for \emph{
   d}-gaps, and is optimal with the following parameter setting:
 
 \begin{equation}
@@ -824,11 +824,11 @@ the number of documents in the collection.\footnote{For details as to
   elsewhere~\cite{Witten_etal_1999}, but here's the intuition:\ under
   reasonable assumptions, the appearance of postings can be modeled as
   a sequence of independent Bernoulli trials, which implies a certain
-  distribution of {\it d}-gaps.  From this we can derive an optimal
+  distribution of \emph{d}-gaps.  From this we can derive an optimal
   setting of $b$.}
 
 Putting everything together, one popular approach for postings
-compression is to represent {\it d}-gaps with Golomb codes and term
+compression is to represent \emph{d}-gaps with Golomb codes and term
 frequencies with $\gamma$
 codes~\cite{Witten_etal_1999,Zobel_Moffat_2006}.  If positional
 information is desired, we can use the same trick to code differences
@@ -843,17 +843,17 @@ how postings lists can be properly compressed.  As we can see from the
 previous section, there is a wide range of choices that represent
 different tradeoffs between compression ratio and decoding speed.
 Actual performance also depends on characteristics of the collection,
-which, among other factors, determine the distribution of {\it
+which, among other factors, determine the distribution of \emph{
   d}-gaps.  B\"uttcher et al.~\cite{Buttcher_etal_2010} recently
 compared the performance of various compression techniques on coding
 document ids.  In terms of the amount of compression that can be
-obtained (measured in bits per {\it docid}), Golomb and Rice codes
+obtained (measured in bits per \emph{docid}), Golomb and Rice codes
 performed the best, followed by $\gamma$ codes, Simple-9, varInt, and
 group varInt (the least space efficient).  In terms of raw decoding
 speed, the order was almost the reverse:\ group varInt was the
 fastest, followed by varInt.\footnote{However, this study found less
   speed difference between group varInt and basic varInt than Dean's
-  analysis, presumably due to the different distribution of {\it d}-gaps
+  analysis, presumably due to the different distribution of \emph{d}-gaps
   in the collections they were examining.}  Simple-9 was substantially
 slower, and the bit-aligned codes were even slower than that.  Within
 the bit-aligned codes, Rice codes were the fastest, followed by
@@ -861,7 +861,7 @@ $\gamma$, with Golomb codes being the slowest (about ten times slower
 than group varInt).
 
 Let us discuss what modifications are necessary to our inverted
-indexing algorithm if we were to adopt Golomb compression for {\it
+indexing algorithm if we were to adopt Golomb compression for \emph{
   d}-gaps and represent term frequencies with $\gamma$ codes.  Note
 that this represents a space-efficient encoding, at the cost of slower
 decoding compared to alternatives.  Whether or not this is actually a
@@ -870,12 +870,12 @@ codes serves a pedagogical purpose, to illustrate how one might set
 compression parameters.
 
 Coding term frequencies with $\gamma$ codes is easy since they are
-parameterless.  Compressing {\it d}-gaps with Golomb codes, however,
+parameterless.  Compressing \emph{d}-gaps with Golomb codes, however,
 is a bit tricky, since two parameters are required:\ the size of the
 document collection and the number of postings for a particular
-postings list (i.e., the document frequency, or {\it df}).  The first
+postings list (i.e., the document frequency, or \emph{df}).  The first
 is easy to obtain and can be passed into the reducer as a constant.
-The {\it df} of a term, however, is not known until all the postings
+The \emph{df} of a term, however, is not known until all the postings
 have been processed---and unfortunately, the parameter must be known
 before any posting is coded.  At first glance, this seems like a
 chicken-and-egg problem.  A two-pass solution that involves first
@@ -883,7 +883,7 @@ buffering the postings (in memory) would suffer from the memory
 bottleneck we've been trying to avoid in the first place.
 
 To get around this problem, we need to somehow inform the reducer of a
-term's {\it df} before any of its postings arrive.  This can be solved
+term's \emph{df} before any of its postings arrive.  This can be solved
 with the order inversion design pattern introduced in
 Section~\ref{chapter3:cond-prob} to compute relative frequencies.  The
 solution is to have the mapper emit special keys of the form $\langle
@@ -909,7 +909,7 @@ in-memory associative array that keeps track of how many documents a
 term has been observed in (i.e., the local document frequency of the
 term for the subset of documents processed by the mapper).  Once the
 mapper has processed all input records, special keys of the form
-$\langle t, \ast \rangle$ are emitted with the partial {\it df} as the
+$\langle t, \ast \rangle$ are emitted with the partial \emph{df} as the
 value.
 
 To ensure that these special keys arrive first, we define the sort
@@ -917,8 +917,8 @@ order of the tuple so that the special symbol $\ast$ precedes all
 documents (part of the order inversion design pattern).  Thus, for
 each term, the reducer will first encounter the $\langle t, \ast
 \rangle$ key, associated with a list of values representing partial
-       {\it df} values originating from each mapper.  Summing all
-       these partial contributions will yield the term's {\it df},
+       \emph{df} values originating from each mapper.  Summing all
+       these partial contributions will yield the term's \emph{df},
        which can then be used to set the Golomb compression parameter
        $b$.  This allows the postings to be incrementally compressed
        as they are encountered in the reducer---memory bottlenecks are
@@ -959,8 +959,8 @@ number of users, each of whom demand sub-second response times, is
 beyond the capabilities of any single machine.  The only solution is
 to distribute retrieval across a large number of machines, which
 necessitates breaking up the index in some manner.  There are two main
-partitioning strategies for distributed retrieval:\ {\it document
-  partitioning} and {\it term partitioning}.  Under document
+partitioning strategies for distributed retrieval:\ \emph{document
+  partitioning} and \emph{term partitioning}.  Under document
 partitioning, the entire collection is broken up into multiple smaller
 sub-collections, each of which is assigned to a server.  In other
 words, each server holds the complete index for a subset of the entire
@@ -1029,8 +1029,8 @@ that documents are missing.  For most queries, the web contains
 more relevant documents than any user has time to digest:\ users of
 course care about getting relevant documents (sometimes, they are
 happy with a single relevant document), but they are generally less
-discriminating when it comes to {\it which} relevant documents appear
-in their results (out of the set of {\it all} relevant documents).
+discriminating when it comes to \emph{which} relevant documents appear
+in their results (out of the set of \emph{all} relevant documents).
 Note that partitions may be unavailable due to reasons other than
 machine failure:\ cycling through different partitions is a very
 simple and non-disruptive strategy for index updates.
@@ -1108,7 +1108,7 @@ offloading the task of sorting postings by document id to the
 MapReduce execution framework.  We also surveyed various techniques
 for integer compression, which yield postings lists that are both more
 compact and faster to process.  As a specific example, one could use
-Golomb codes for compressing {\it d}-gaps and $\gamma$ codes for term
+Golomb codes for compressing \emph{d}-gaps and $\gamma$ codes for term
 frequencies.  We showed how the order inversion design pattern
 introduced in Section~\ref{chapter3:cond-prob} for computing relative
 frequencies can be used to properly set compression parameters.
@@ -1123,15 +1123,15 @@ indexing and retrieval algorithms.  Another by Baeza-Yates et
 al.~\cite{Baeza-Yates_etal_2007} overviews many important issues in
 distributed retrieval.  A keynote talk at the WSDM 2009 conference by
 Jeff Dean revealed a lot of information about the evolution of the
-Google search architecture.\footnote{\tt
-  http://research.google.com/people/jeff/WSDM09-keynote.pdf} Finally,
+Google search architecture.\footnote{\texttt{
+  http://research.google.com/people/jeff/WSDM09-keynote.pdf}} Finally,
 a number of general information retrieval textbooks have been recently
 published~\cite{Manning_etal_2008,Croft_etal_2009,Buttcher_etal_2010}.
 Of these three, the one by B\"uttcher et al.~\cite{Buttcher_etal_2010}
 is noteworthy in having detailed experimental evaluations that compare
 the performance (both effectiveness and efficiency) of a wide range of
 algorithms and techniques.  While outdated in many other respects, the
-textbook {\it Managing Gigabytes}~\cite{Witten_etal_1999} remains an
+textbook \emph{Managing Gigabytes}~\cite{Witten_etal_1999} remains an
 excellent source for index compression techniques.  Finally, ACM SIGIR
 is an annual conference and the most prestigious venue for academic
 information retrieval research; proceedings from those events are

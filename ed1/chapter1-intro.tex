@@ -53,19 +53,17 @@ How much data are we talking about?  A few examples: Google grew from
 processing 100 TB of data a day with MapReduce in
 2004~\cite{Dean_Ghemawat_OSDI2004} to processing 20 PB a day with
 MapReduce in 2008~\cite{Dean_Ghemawat_CACM2008}.  In April 2009, a
-blog post\footnote{\tt
-  http://www.dbms2.com/2009/04/30/ebays-two-enormous-data-warehouses/}
+blog post\footnote{\texttt{http://www.dbms2.com/2009/04/30/ebays-two-enormous-data-warehouses/}}
 was written about eBay's two enormous data warehouses:\ one with 2
 petabytes of user data, and the other with 6.5 petabytes of user data
 spanning 170 trillion records and growing by 150 billion new records
-per day.  Shortly thereafter, Facebook revealed\footnote{\tt
-  http://www.dbms2.com/2009/05/11/facebook-hadoop-and-hive/} similarly
+per day.  Shortly thereafter, Facebook revealed\footnote{\texttt{http://www.dbms2.com/2009/05/11/facebook-hadoop-and-hive/}} similarly
 impressive numbers, boasting of 2.5 petabytes of user data, growing at
 about 15 terabytes per day.  Petabyte datasets are rapidly becoming
 the norm, and the trends are clear:\ our ability to store data is fast
 overwhelming our ability to process what we store.  More distressing,
 increases in capacity are outpacing improvements in bandwidth such
-that our ability to even {\it read} back what we store is
+that our ability to even \emph{read} back what we store is
 deteriorating~\cite{Leventhal_2009}.  Disk capacities have grown from
 tens of megabytes in the mid-1980s to about a couple of terabytes
 today (several orders of magnitude).  On the other hand, latency and
@@ -90,8 +88,7 @@ common~\cite{Bell_etal_2009}.  For example:
   probe the mysteries of the universe, including the fundamental
   nature of matter, by recreating conditions shortly following the Big
   Bang.  When it becomes fully operational, the LHC will produce
-  roughly 15 petabytes of data a year.\footnote{\tt
-    http://public.web.cern.ch/public/en/LHC/Computing-en.html}
+  roughly 15 petabytes of data a year.\footnote{\texttt{http://public.web.cern.ch/public/en/LHC/Computing-en.html}}
 
 \item Astronomers have long recognized the importance of a ``digital
   observatory'' that would support the data needs of researchers
@@ -143,10 +140,10 @@ data-driven, empirical approach, typically involving algorithms that
 attempt to capture statistical regularities in data for the purposes
 of some task or application.  There are three components to this
 approach:\ data, representations of the data, and some method for
-capturing regularities in the data.  Data are called {\it corpora}
-(singular, corpus) by NLP researchers and {\it collections} by those
+capturing regularities in the data.  Data are called \emph{corpora}
+(singular, corpus) by NLP researchers and \emph{collections} by those
 from the IR community.  Aspects of the representations of the data are
-called {\it features}, which may be ``superficial'' and easy to
+called \emph{features}, which may be ``superficial'' and easy to
 extract, such as the words and sequences of words themselves, or
 ``deep'' and more difficult to extract, such as the grammatical
 relationship between words.  Finally, algorithms or models are applied
@@ -171,7 +168,7 @@ of the three components discussed above (data, features, algorithms),
 data probably matters the most.  Superficial word-level features
 coupled with simple models in most cases trump sophisticated models
 over deeper features and less data.  But why can't we have our cake
-and eat it too?  Why not both sophisticated models {\it and} deep
+and eat it too?  Why not both sophisticated models \emph{and} deep
 features applied to lots of data?  Because inference over
 sophisticated models and extraction of deep features are often
 computationally intensive, they don't scale well.
@@ -218,7 +215,7 @@ you can simply search for the phrase ``shot Abraham Lincoln'' on the
 web and look for what appears to its left.  Or better yet, look
 through multiple instances of this phrase and tally up the words that
 appear to the left.  This simple strategy works surprisingly well, and
-has become known as the {\it redundancy-based approach} to question
+has become known as the \emph{redundancy-based approach} to question
 answering.  It capitalizes on the insight that in a very large text
 collection (i.e., the web), answers to commonly-asked questions will
 be stated in obvious ways, such that pattern-matching techniques
@@ -238,10 +235,10 @@ them, language modeling is a more challenging task than simply keeping
 track of which strings were seen how many times:\ some number of
 likely strings will never be encountered, even with lots and lots of
 training data!  Most modern language models make the Markov
-assumption:\ in a {\it n}-gram language model, the conditional
+assumption:\ in a \emph{n}-gram language model, the conditional
 probability of a word is given by the $n-1$ previous words.  Thus, by
 the chain rule, the probability of a sequence of words can be
-decomposed into the product of {\it n}-gram probabilities.
+decomposed into the product of \emph{n}-gram probabilities.
 Nevertheless, an enormous number of parameters must still be estimated
 from a training corpus:\ potentially $V^n$ parameters, where $V$ is
 the number of words in the vocabulary.  Even if we treat every word on
@@ -256,8 +253,8 @@ approaches vary in effectiveness, both in terms of intrinsic and
 application-specific metrics.  In 2007, Brants et
 al.~\cite{Brants_etal_EMNLP2007} described language models trained on
 up to two trillion words.\footnote{As an aside, it is interesting to
-  observe the evolving definition of {\it large} over the years.
-  Banko and Brill's paper in 2001 was titled {\it Scaling to Very Very
+  observe the evolving definition of \emph{large} over the years.
+  Banko and Brill's paper in 2001 was titled \emph{Scaling to Very Very
     Large Corpora for Natural Language Disambiguation}, and dealt with
   a corpus containing a billion words.}  Their experiments compared a
 state-of-the-art approach known as Kneser-Ney
@@ -265,22 +262,22 @@ smoothing~\cite{Chen_Goodman_ACL1996} with another technique the
 authors affectionately referred to as ``stupid backoff''.\footnote{As
   in, so stupid it couldn't possibly work.}  Not surprisingly, stupid
 backoff didn't work as well as Kneser-Ney smoothing on smaller
-corpora.  However, it was simpler and could be trained on {\it more}
+corpora.  However, it was simpler and could be trained on \emph{more}
 data, which ultimately yielded better language models.  That is, a
 simpler technique on more data beat a more sophisticated technique on
 less data.
 
 Recently, three Google researchers summarized this data-driven
-philosophy in an essay titled {\it The Unreasonable Effectiveness of
+philosophy in an essay titled \emph{The Unreasonable Effectiveness of
   Data}~\cite{Halevy_etal_2009}.\footnote{This title was inspired by a
-  classic article titled {\it The Unreasonable Effectiveness of
+  classic article titled \emph{The Unreasonable Effectiveness of
     Mathematics in the Natural Sciences}~\cite{Wigner_1960}.  This is
   somewhat ironic in that the original article lauded the beauty and
   elegance of mathematical models in capturing natural phenomena,
   which is the exact opposite of the data-driven approach.} Why is
-this so?  It boils down to the fact that language {\it in the wild},
+this so?  It boils down to the fact that language \emph{in the wild},
 just like human behavior in general, is messy.  Unlike, say, the
-interaction of subatomic particles, human {\it use} of language is not
+interaction of subatomic particles, human \emph{use} of language is not
 constrained by succinct, universal ``laws of grammar''.  There are of
 course rules that govern the formation of words and sentences---for
 example, that verbs appear before objects in English, and that
@@ -291,9 +288,9 @@ occasionally make mistakes, groups of individuals write within a
 shared context, etc.  The Argentine writer Jorge Luis Borges wrote a
 famous allegorical one-paragraph story about a fictional society in
 which the art of cartography had gotten so advanced that their maps
-were as big as the lands they were describing.\footnote{{\it On
+were as big as the lands they were describing.\footnote{\emph{On
     Exactitude in Science}~\cite{Borges_1999}.  A similar exchange
-  appears in Chapter XI of {\it Sylvie and Bruno Concluded} by Lewis
+  appears in Chapter XI of \emph{Sylvie and Bruno Concluded} by Lewis
   Carroll (1893).} The world, he would say, is the best description of
 itself.  In the same way, the more observations we gather about
 language use, the more accurate a description we have of language
@@ -305,13 +302,13 @@ similar to the reason people climb mountains:\ because they're there.
 But the second answer is even more compelling.  Data represent the
 rising tide that lifts all boats---more data lead to better algorithms
 and systems for solving real-world problems.  Now that we've addressed
-the {\it why}, let's tackle the {\it how}.  Let's start with the
+the \emph{why}, let's tackle the \emph{how}.  Let's start with the
 obvious observation:\ data-intensive processing is beyond the
 capability of any individual machine and requires clusters---which
 means that large-data problems are fundamentally about organizing
 computations on dozens, hundreds, or even thousands of machines.  This
 is exactly what MapReduce does, and the rest of this book is about the
-{\it how}.
+\emph{how}.
 
 \section{Computing in the Clouds}
 \label{chapter1:clouds}
@@ -322,7 +319,7 @@ computing.  True, there is substantial promise in this new paradigm of
 computing, but unwarranted hype by the media and popular sources
 threatens its credibility in the long run.  In some ways, cloud
 computing is simply brilliant marketing.  Before clouds, there were
-grids,\footnote{What {\it is} the difference between cloud computing
+grids,\footnote{What \emph{is} the difference between cloud computing
   and grid computing?  Although both tackle the fundamental problem of
   how best to bring computational resources to bear on large and
   difficult problems, they start with different assumptions.  Whereas
@@ -465,7 +462,7 @@ organization might lack the capital, expertise, or interest in running
 datacenters, and therefore pays a cloud provider to do so on its
 behalf.  The argument applies similarly to PaaS and SaaS.  In the same
 vein, the MapReduce programming model is a powerful abstraction that
-separates the {\it what} from the {\it how} of data-intensive
+separates the \emph{what} from the \emph{how} of data-intensive
 processing.
 
 \section{Big Ideas}
@@ -512,7 +509,7 @@ about a factor of twelve.
 What if we take into account the fact that communication between nodes
 in a high-end SMP machine is orders of magnitude faster than
 communication between nodes in a commodity network-based cluster?
-Since workloads today are beyond the capability of any {\it single}
+Since workloads today are beyond the capability of any \emph{single}
 machine (no matter how powerful), the comparison is more accurately
 between a smaller cluster of high-end machines and a larger cluster of
 low-end machines (network communication is unavoidable in both cases).
@@ -690,8 +687,8 @@ details (e.g., locking of data structures, data starvation issues in
 the processing pipeline, etc.).  The programming model specifies
 simple and well-defined interfaces between a small number of
 components, and therefore is easy for the programmer to reason about.
-MapReduce maintains a separation of {\it what} computations are to be
-performed and {\it how} those computations are actually carried out on
+MapReduce maintains a separation of \emph{what} computations are to be
+performed and \emph{how} those computations are actually carried out on
 a cluster of machines.  The first is under the control of the
 programmer, while the second is exclusively the responsibility of the
 execution framework or ``runtime''.  The advantage is that the
@@ -709,7 +706,7 @@ algorithms are highly desirable.  As an aspiration, let us sketch the
 behavior of an ideal algorithm.  We can define scalability along at
 least two dimensions.\footnote{See also DeWitt and
   Gray~\cite{DeWitt_Gray_CACM1992} for slightly different definitions
-  in terms of {\it speedup} and {\it scaleup}.}  First, in terms of
+  in terms of \emph{speedup} and \emph{scaleup}.}  First, in terms of
 data:\ given twice the amount of data, the same algorithm should take
 at most twice as long to run, all else being equal.  Second, in terms
 of resources:\ given a cluster twice the size, the same algorithm
@@ -723,7 +720,7 @@ parameters.
 
 Other than for embarrassingly parallel problems, algorithms with the
 characteristics sketched above are, of course, unobtainable.  One of
-the fundamental assertions in Fred Brook's classic {\it The Mythical
+the fundamental assertions in Fred Brook's classic \emph{The Mythical
   Man-Month}~\cite{Brooks_1995} is that adding programmers to a
 project behind schedule will only make it fall further behind.  This
 is because complex tasks cannot be chopped into smaller pieces and
@@ -757,12 +754,12 @@ reimplementations).
 Perhaps the most exciting aspect of MapReduce is that it represents a
 small step toward algorithms that behave in the ideal manner discussed
 above.  Recall that the programming model maintains a clear separation
-between {\it what} computations need to occur with {\it how} those
+between \emph{what} computations need to occur with \emph{how} those
 computations are actually orchestrated on a cluster.  As a result, a
 MapReduce algorithm remains fixed, and it is the responsibility of the
 execution framework to execute the algorithm.  Amazingly, the
 MapReduce programming model is simple enough that it is actually
-possible, in many circumstances, to {\it approach} the ideal scaling
+possible, in many circumstances, to \emph{approach} the ideal scaling
 characteristics discussed above.  We introduce the idea of the
 ``tradeable machine hour'', as a play on Brook's classic title.  If
 running an algorithm on a particular dataset takes 100 machine hours,
@@ -842,10 +839,10 @@ in a cluster (each of which often has multiple cores).
 Why is MapReduce important?  In practical terms, it provides a very
 effective tool for tackling large-data problems.  But beyond that,
 MapReduce is important in how it has changed the way we organize
-computations at a massive scale.  MapReduce represents the first {\it
+computations at a massive scale.  MapReduce represents the first \emph{
   widely-adopted} step away from the von Neumann model that has served
 as the foundation of computer science over the last half plus century.
-Valiant called this a {\it bridging model}~\cite{Valiant_CACM1990}, a
+Valiant called this a \emph{bridging model}~\cite{Valiant_CACM1990}, a
 conceptual bridge between the physical implementation of a machine and
 the software that is to be executed on that machine.  Until recently,
 the von Neumann model has served us well:\ Hardware designers focused
@@ -867,7 +864,7 @@ resources---it simply is the wrong level of abstraction.  MapReduce
 can be viewed as the first breakthrough in the quest for new
 abstractions that allow us to organize computations, not over
 individual machines, but over entire clusters.  As Barroso puts it,
-the datacenter {\it is} the
+the datacenter \emph{is} the
 computer~\cite{Barroso_Holzle_2009,Patterson_CACM2008}.
 
 To be fair, MapReduce is certainly not the first model of parallel
@@ -915,7 +912,7 @@ Actually, not quite yet\ldots A final word before we get started.
 This book is about MapReduce algorithm design, particularly for text
 processing (and related) applications.  Although our presentation most
 closely follows the Hadoop open-source implementation of MapReduce,
-this book is explicitly {\it not} about Hadoop programming.  We don't
+this book is explicitly \emph{not} about Hadoop programming.  We don't
 for example, discuss APIs, command-line invocations for running jobs,
 etc.  For those aspects, we refer the reader to Tom White's excellent
 book, ``Hadoop:\ The Definitive Guide'', published by

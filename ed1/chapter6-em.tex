@@ -31,7 +31,7 @@ the model perform as well as possible at predicting the examples in
 the training data.  The learning process, which often involves
 iterative algorithms, typically consists of activities like ranking
 rules, instantiating the content of rule templates, or determining
-parameter settings for a given model. This is known as {\it machine
+parameter settings for a given model. This is known as \emph{machine
   learning}, an active area of research.
 
 Data-driven approaches have turned out to have several benefits over
@@ -410,7 +410,7 @@ unchanged.\footnote{The final solution is only guaranteed to be a
   \emph{local maximum}, but if the model is fully convex, it will also
   be the global maximum.} In more detail, the steps are as follows:
 
-\paragraph{\bf E-step.}
+\paragraph{\textbf{E-step.}}
 Compute the posterior probability of each possible hidden variable
 assignments $y \in \mathcal{Y}$ for each $x \in \mathcal{X}$ and the
 current parameter settings, weighted by the relative frequency with
@@ -425,7 +425,7 @@ q(x,y;\theta^{(i)}) = f(x|\textbf{x}) \cdot \Pr(Y=y|X=x;\theta^{(i)})
   \Pr(x,y';\theta^{(i)})}
 \end{equation}
 
-\paragraph{\bf M-step.}
+\paragraph{\textbf{M-step.}}
 Compute new parameter settings that maximize the expected log of the
 probability of the joint distribution under the $q$-distribution that
 was computed in the E-step:
@@ -459,7 +459,7 @@ parameters $\theta^{(0)}=\langle p_0^{(0)}, p_1^{(0)}, p_2^{(0)}
 \rangle$ that have been randomly initialized to values between 0 and
 1.
 
-\paragraph{\bf E-step.}
+\paragraph{\textbf{E-step.}}
 We need to compute the distribution $q(X=x,Y=y;\theta^{(i)})$, as
 defined above.  We first note that the relative frequency
 $f(x|\textbf{x})$ is:
@@ -481,7 +481,7 @@ when $X$ is $b$:
 zero for all other values of $x$ and $y$ (regardless of the value of
 the parameters).
 
-\paragraph{\bf M-step.}
+\paragraph{\textbf{M-step.}}
 We now need to maximize the expectation of $\log \Pr(X,Y;\theta')$
 (which will be a function in terms of the three parameter variables)
 under the $q$-distribution we computed in the E step.  The non-zero
@@ -549,7 +549,7 @@ comparison, the PageRank algorithm considered in the previous chapter
 (Section~\ref{chapter-graphs:PageRank}) can be understood as a Markov
 process:\ the probability of following any link on a particular page
 is independent of the path taken to reach that page.  The states of
-this Markov process are, however, not directly observable (i.e., {\it
+this Markov process are, however, not directly observable (i.e., \emph{
   hidden}).  Instead, at each time step, an observable token (e.g., a
 word, base pair, or letter) is emitted according to a probability
 distribution conditioned on the identity of the state that the
@@ -771,7 +771,7 @@ sequence of states under our example HMM.
 However, a more efficient answer to Question 2 can be computed using
 the same intuition in the forward algorithm:\ determine the best state
 sequence for a short sequence and extend this to easily compute the
-best sequence for longer ones.  This is known as the {\it Viterbi
+best sequence for longer ones.  This is known as the \emph{Viterbi
   algorithm}.  We define $\gamma_t(q)$, the Viterbi probability, to be
 the most probable sequence of states ending in state $q$ at time $t$
 and generating observations $\langle x_1, x_2, \ldots , x_t \rangle$.
@@ -957,7 +957,7 @@ sufficient to execute the M-step.
 \label{eq:chapter6_ex1a} \mathbb{E}[T(q \rightarrow r)] & = & \sum_{i=1}^{|\textbf{x}|-1} \Pr(y_i = q , y_{i+1} = r | \textbf{x}; \theta)
 \end{eqnarray}
 
-\paragraph{\bf Posterior probabilities.}
+\paragraph{\textbf{Posterior probabilities.}}
 
 The expectations necessary for computing the M-step in HMM training
 are sums of probabilities that a particular transition is taken, given
@@ -1009,10 +1009,10 @@ we assume an HMM with $\mathcal{S} = \{ \textsc{s}_1, \textsc{s}_2,
 \vspace{0.2cm}
 \includegraphics[scale=0.55]{figures/fig-ch6-HMM-forward-backward.pdf}
 \vspace{-0.3cm}
-\end{center}\caption{Using forward and backward probabilities to compute the posterior probability of the dashed transition, given the observation sequence {\tt a b b c b}.  The shaded area on the left corresponds to the forward probability $\alpha_{2}(\textsc{s}_2)$, and the shaded area on the right corresponds to the backward probability $\beta_3(\textsc{s}_2)$.}\label{chapter6_forwardbackward}
+\end{center}\caption{Using forward and backward probabilities to compute the posterior probability of the dashed transition, given the observation sequence {\texttt{ a b b c b}.  The shaded area on the left corresponds to the forward probability $\alpha_{2}(\textsc{s}_2)$, and the shaded area on the right corresponds to the backward probability $\beta_3(\textsc{s}_2)$.}\label{chapter6_forwardbackward}}
 \end{figure*}
 
-\paragraph{\bf The backward algorithm.}
+\paragraph{\textbf{The backward algorithm.}}
 Like the forward and Viterbi algorithms introduced above to answer
 Questions 1 and 2, the backward algorithm uses dynamic programming to
 incrementally compute $\beta_t(\cdot)$.  Its base case starts at time
@@ -1174,9 +1174,9 @@ The quantities that are required to solve the M-step optimization
 problem are quite similar to the relative frequency estimation example
 discussed in Section~\ref{chapter3:cond-prob}; however, rather than
 counts of observed events, we aggregate \emph{expected} counts of
-events.  As a result of the similarity, we can employ the {\it
+events.  As a result of the similarity, we can employ the \emph{
   stripes} representation for aggregating sets of related values, as
-described in Section~\ref{chapter3:pairs-and-stripes}.  A {\it pairs}
+described in Section~\ref{chapter3:pairs-and-stripes}.  A \emph{pairs}
 approach that requires less memory at the cost of slower performance
 is also feasible.
 
@@ -1265,7 +1265,7 @@ is also feasible.
 \label{figure:chapter6:mr_hmm_reducer}
 \end{figure*}
 
-\paragraph{\bf HMM training mapper.}
+\paragraph{\textbf{HMM training mapper.}}
 The pseudo-code for the HMM training mapper is given in
 Figure~\ref{figure:chapter6:mr_hmm_mapper}.  The input consists of
 key-value pairs with a unique id as the key and a training instance
@@ -1292,7 +1292,7 @@ The outputs are:
 
 \end{enumerate}
 
-\paragraph{\bf HMM training reducer.} 
+\paragraph{\textbf{HMM training reducer.}}
 The reducer for one iteration of HMM training, shown together with an
 optional combiner in Figure~\ref{figure:chapter6:mr_hmm_reducer},
 aggregates the count collections associated with each key by summing
@@ -1373,7 +1373,7 @@ One approach to statistical translation that is simple yet powerful is
 called \emph{phrase-based translation} \cite{Koehn_2003}.  We provide
 a rough outline of the process since it is representative of most
 state-of-the-art statistical translation systems, such as the one used
-inside Google Translate.\footnote{\tt http://translate.google.com}
+inside Google Translate.\footnote{\texttt{http://translate.google.com}}
 Phrase-based translation works by learning how strings of words,
 called \emph{phrases}, translate between languages.\footnote{Phrases
   are simply sequences of words; they are not required to correspond
@@ -1386,8 +1386,8 @@ $\langle \textrm{\emph{los estudiantes}}, \textrm{\emph{some
 of example translations, many millions of such phrase pairs may be
 automatically learned.
 
-The starting point is typically a parallel corpus (also called {\it
-  bitext}), which contains {\it pairs} of sentences in two languages
+The starting point is typically a parallel corpus (also called \emph{
+  bitext}), which contains \emph{pairs} of sentences in two languages
 that are translations of each other. Parallel corpora are frequently
 generated as the byproduct of an organization's effort to disseminate
 information in multiple languages, for example, proceedings of the
@@ -1441,20 +1441,20 @@ chain rule of probability, we get:
 \end{equation}
 
 \noindent Due to the extremely large number of parameters involved in
-estimating such a model directly, it is customary to make the {\it
+estimating such a model directly, it is customary to make the \emph{
   Markov assumption}, that the sequence histories only depend on prior
-local context.  That is, an {\it n}-gram language model is equivalent
-to a ($n-1$){\it th}-order Markov model.  Thus, we can approximate
+local context.  That is, an \emph{n}-gram language model is equivalent
+to a ($n-1$)\emph{th}-order Markov model.  Thus, we can approximate
 $P(w_k|w_1^{k-1})$ as follows:
 
 \begin{eqnarray}
 \textrm{bigrams:} & P(w_k|w_1^{k-1}) & \approx P(w_k|w_{k-1}) \\
 \textrm{trigrams:} & P(w_k|w_1^{k-1}) & \approx P(w_k|w_{k-1} w_{k-2}) \\
-\textrm{{\it n}-grams:} & P(w_k|w_1^{k-1}) & \approx  P(w_k|w_{k-n+1}^{k-1})
+\textrm{\emph{n}-grams:} & P(w_k|w_1^{k-1}) & \approx  P(w_k|w_{k-n+1}^{k-1})
 \end{eqnarray}
 
 \noindent The probabilities used in computing $\Pr(w_{1}^{n})$ based
-on an {\it n}-gram language model are generally estimated from a
+on an \emph{n}-gram language model are generally estimated from a
 monolingual corpus of target language text.  Since only target
 language text is necessary (without any additional annotation),
 language modeling has been well served by large-data approaches that
@@ -1484,12 +1484,12 @@ digression on distributed parameter estimation for language models
 using MapReduce, and provides another example illustrating the
 effectiveness data-driven approaches in general.  We briefly touched
 upon this work in Chapter~\ref{chapter1}.  Even after making the
-Markov assumption, training {\it n}-gram language models still
+Markov assumption, training \emph{n}-gram language models still
 requires estimating an enormous number of parameters:\ potentially
 $V^n$, where $V$ is the number of words in the vocabulary.  For
 higher-order models (e.g., 5-grams) used in real-world applications,
 the number of parameters can easily exceed the number of words from
-which to estimate those parameters.  In fact, most {\it n}-grams will
+which to estimate those parameters.  In fact, most \emph{n}-grams will
 never be observed in a corpus, no matter how large.  To cope with this
 sparseness, researchers have developed a number of smoothing
 techniques~\cite{Manning_Schutze_1999}, which all share the basic idea
@@ -1502,7 +1502,7 @@ experimental results that answered an interesting question:\ given the
 availability of large corpora (i.e., the web), could a simpler
 smoothing strategy, applied to more text, beat Kneser-Ney in a machine
 translation task?  It should come as no surprise that the answer is
-{\it yes}. Brants et al.\ introduced a technique known as ``stupid
+\emph{yes}. Brants et al.\ introduced a technique known as ``stupid
 backoff'' that was exceedingly simple and so na\"{i}ve that the
 resulting model didn't even define a valid probability distribution
 (it assigned arbitrary scores as opposed to probabilities).  The
@@ -1683,7 +1683,7 @@ the case with so many problems we have encountered, more data leads to
 improvements in translation quality \cite{Dyer_etal_2008}.  Recently a
 corpus of one billion words of French-English data was mined
 automatically from the web and released publicly
-\cite{Callison_Burch_2009}.\footnote{{\tt
+\cite{Callison_Burch_2009}.\footnote{\texttt{
     http://www.statmt.org/wmt10/translation-task.html}} Single-core
 solutions to model construction simply cannot keep pace with the
 amount of translated data that is constantly being
@@ -1778,7 +1778,7 @@ perform updates that are informed by approximations of the second
 derivative, which are estimated by successive evaluations of $\nabla
 F(\theta)$, and can converge much more rapidly \cite{LBFGS}.
 
-\paragraph{\bf Gradient-based optimization in MapReduce.}
+\paragraph{\textbf{Gradient-based optimization in MapReduce.}}
 Gradient-based optimization algorithms can often be implemented
 effectively in MapReduce.  Like EM, where the structure of the model
 determines the specifics of the realization, the details of the
@@ -1822,7 +1822,7 @@ optimization tend to have the following characteristics:
 \end{itemize}
 
 
-\paragraph{\bf Parameter learning for log-linear models.}
+\paragraph{\textbf{Parameter learning for log-linear models.}}
 Gradient-based optimization techniques can be quite effectively used
 to learn the parameters of probabilistic models with a log-linear
 parameterization \cite{Malouf_2002}.  While a comprehensive
@@ -1933,8 +1933,8 @@ active research.  Chu et al.~\cite{ChuCT_etal_2006} presented general
 formulations of a variety of machine learning problems, focusing on a
 normal form for expressing a variety of machine learning algorithms in
 MapReduce.  The Apache Mahout project is an open-source implementation
-of these and other learning algorithms,\footnote{\tt
-  http://lucene.apache.org/mahout/} and it is also the subject of a
+of these and other learning algorithms,\footnote{\texttt{
+  http://lucene.apache.org/mahout/}} and it is also the subject of a
 forthcoming book~\cite{Owen_2010}.  Issues associated with a MapReduce
 implementation of latent Dirichlet allocation (LDA), which is another
 important unsupervised learning technique, with certain similarities
