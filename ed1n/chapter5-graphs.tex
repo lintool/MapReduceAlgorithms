@@ -11,7 +11,7 @@ intricate metabolic and regulatory network, which can be characterized
 as a large, complex graph involving interactions between genes,
 proteins, and other cellular products.  This chapter focuses on graph
 algorithms in MapReduce.  Although most of the content has nothing to
-do with text processing {\it per se}, documents frequently exist in
+do with text processing \emph{per se}, documents frequently exist in
 the context of some underlying network, making graph analysis an
 important component of many text processing applications.  Perhaps the
 best known example is PageRank, a measure of web page quality based on
@@ -23,8 +23,8 @@ later this chapter.
 
 In general, graphs can be characterized by nodes (or vertices) and
 links (or edges) that connect pairs of nodes.\footnote{Throughout this
-  chapter, we use {\it node} interchangeably with {\it vertex} and
-  similarly with {\it link} and {\it edge}.}  These connections can be
+  chapter, we use \emph{node} interchangeably with \emph{vertex} and
+  similarly with \emph{link} and \emph{edge}.}  These connections can be
 directed or undirected.  In some graphs, there may be an edge from a
 node to itself, resulting in a self loop; in others, such edges are
 disallowed.  We assume that both nodes and links may be annotated with
@@ -35,7 +35,7 @@ information attached to the links (e.g., indicating type of
 relationship such as ``friend'' or ``spouse'').
 
 Mathematicians have always been fascinated with graphs, dating back to
-Euler's paper on the {\it Seven Bridges of K\"{o}nigsberg} in 1736.
+Euler's paper on the \emph{Seven Bridges of K\"{o}nigsberg} in 1736.
 Over the past few centuries, graphs have been extensively studied, and
 today much is known about their properties.  Far more than theoretical
 curiosities, theorems and algorithms on graphs can be applied to solve
@@ -148,9 +148,9 @@ Although mathematicians prefer the adjacency matrix representation of
 graphs for easy manipulation with linear algebra, such a
 representation is far from ideal for computer scientists concerned
 with efficient algorithmic implementations.  Most of the applications
-discussed in the chapter introduction involve {\it sparse} graphs,
-where the number of {\it actual} edges is far smaller than the number
-of {\it possible} edges.\footnote{Unfortunately, there is no precise
+discussed in the chapter introduction involve \emph{sparse} graphs,
+where the number of \emph{actual} edges is far smaller than the number
+of \emph{possible} edges.\footnote{Unfortunately, there is no precise
   definition of sparseness agreed upon by all, but one common
   definition is that a sparse graph has $O(n)$ edges, where $n$ is the
   number of vertices.}  For example, in a social network of $n$
@@ -195,7 +195,7 @@ with in the reducer.  This property of the execution framework can
 also be used to invert the edges of a directed graph, by mapping over
 the nodes' adjacency lists and emitting key--value pairs with the
 destination node id as the key and the source node id as the
-value.\footnote{This technique is used in {\it anchor text inversion},
+value.\footnote{This technique is used in \emph{anchor text inversion},
   where one gathers the anchor text of hyperlinks pointing to a
   particular page.  It is common practice to enrich a web page's
   standard textual representation with all of the anchor text
@@ -206,7 +206,7 @@ value.\footnote{This technique is used in {\it anchor text inversion},
 \label{chapter-graphs:BFS}
 
 One of the most common and well-studied problems in graph theory is
-the {\it single-source shortest path} problem, where the task is to
+the \emph{single-source shortest path} problem, where the task is to
 find shortest paths from a source node to all other nodes in the graph
 (or alternatively, edges can be associated with costs or weights, in
 which case the task is to compute lowest-cost or lowest-weight paths).
@@ -218,7 +218,7 @@ solve this problem in parallel, and more specifically, with MapReduce?
 As a refresher and also to serve as a point of comparison, Dijkstra's
 algorithm is shown in Figure~\ref{figure:chapter-graphs:Dijkstra},
 adapted from Cormen, Leiserson, and Rivest's classic algorithms
-textbook~\cite{CLR} (often simply known as {\it CLR}).  The input to
+textbook~\cite{CLR} (often simply known as \emph{CLR}).  The input to
 the algorithm is a directed, connected graph $G=(V,E)$ represented
 with adjacency lists, $w$ containing edge distances such that $w(u,v)
 \geq 0$, and the source node $s$.  The algorithm begins by first
@@ -284,7 +284,7 @@ path.
 
 A sample trace of the algorithm running on a simple graph is shown in
 Figure~\ref{figure:chapter-graphs:Dijkstra-example} (example also adapted
-from {\it CLR}).  We start out in (a) with $n_1$ having a
+from \emph{CLR}).  We start out in (a) with $n_1$ having a
 distance of zero (since it's the source) and all other nodes having a
 distance of $\infty$.  In the first iteration (a), $n_1$ is selected
 as the node to expand (indicated by the thicker border).  After the
@@ -874,13 +874,13 @@ Therefore, at the end of each iteration, the PageRank driver program
 must check to see if convergence has been reached.  Alternative
 stopping criteria include running a fixed number of iterations (useful
 if one wishes to bound algorithm running time) or stopping when the
-{\it ranks} of PageRank values no longer change.  The latter is useful
+\emph{ranks} of PageRank values no longer change.  The latter is useful
 for some applications that only care about comparing the PageRank of
 two arbitrary pages and do not need the actual PageRank values.  Rank
 stability is obtained faster than the actual convergence of values.
 
 In absolute terms, how many iterations are necessary for PageRank to
-converge?  This is a difficult question to {\it precisely} answer
+converge?  This is a difficult question to \emph{precisely} answer
 since it depends on many factors, but generally, fewer than one might
 expect.  In the original PageRank paper~\cite{Page_etal_1999},
 convergence on a graph with 322 million edges was reached in 52
@@ -995,7 +995,7 @@ implemented with reasonable precision as follows:
  \end{array} \right.
  \end{displaymath}
 
-\noindent Furthermore, many math libraries include a {\tt log1p}
+\noindent Furthermore, many math libraries include a \texttt{log1p}
 function which computes $\log(1+x)$ with higher precision than the
 na\"{i}ve implementation would have when $x$ is very small (as is
 often the case when working with probabilities).  Its use may further

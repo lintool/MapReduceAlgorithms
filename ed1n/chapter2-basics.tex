@@ -53,9 +53,9 @@ synchronization primitives such as mutexes, to explicitly handle
 process synchronization through devices such as barriers, and to
 remain ever vigilant for common problems such as deadlocks and race
 conditions.  Language extensions, like OpenMP for shared memory
-parallelism,\footnote{\tt http://www.openmp.org/} or libraries
+parallelism,\footnote{\texttt{http://www.openmp.org/}} or libraries
 implementing the Message Passing Interface (MPI) for cluster-level
-parallelism,\footnote{\tt http://www.mcs.anl.gov/mpi/} provide logical
+parallelism,\footnote{\texttt{http://www.mcs.anl.gov/mpi/}} provide logical
 abstractions that hide details of operating system synchronization and
 communications primitives.  However, even with these extensions,
 developers are still burdened to keep track of how resources are made
@@ -117,20 +117,20 @@ are important characteristics of MapReduce that make it non-functional
 in nature---this will become apparent later.} A key feature of
 functional languages is the concept of higher-order functions, or
 functions that can accept other functions as arguments.  Two common
-built-in higher order functions are {\it map} and {\it fold},
+built-in higher order functions are \emph{map} and \emph{fold},
 illustrated in Figure~\ref{figure:chapter2:functional}.  Given a list,
-{\it map} takes as an argument a function $f$ (that takes a single
+\emph{map} takes as an argument a function $f$ (that takes a single
 argument) and applies it to all elements in a list (the top part of
-the diagram).  Given a list, {\it fold} takes as arguments a function
+the diagram).  Given a list, \emph{fold} takes as arguments a function
 $g$ (that takes two arguments) and an initial value:\ $g$ is first
 applied to the initial value and the first item in the list, the
 result of which is stored in an intermediate variable.  This
 intermediate variable and the next item in the list serve as the
 arguments to a second application of $g$, the results of which are
 stored in the intermediate variable.  This process repeats until all
-items in the list have been consumed; {\it fold} then returns the
-final value of the intermediate variable.  Typically, {\it map} and
-{\it fold} are used in combination.  For example, to compute the sum
+items in the list have been consumed; \emph{fold} then returns the
+final value of the intermediate variable.  Typically, \emph{map} and
+\emph{fold} are used in combination.  For example, to compute the sum
 of squares of a list of integers, one could map a function that
 squares its argument (i.e., $\lambda x. x^2$) over the input list, and
 then fold the resulting list with the addition function (more
@@ -143,36 +143,36 @@ zero.
 \includegraphics[scale=0.6]{figures/fig-ch2-functional-programming.pdf}
 \vspace{-0.3cm}
 \end{center}
-\caption{Illustration of {\it map} and {\it fold}, two higher-order
-  functions commonly used together in functional programming:\ {\it
+\caption{Illustration of \emph{map} and \emph{fold}, two higher-order
+  functions commonly used together in functional programming:\ \emph{
     map} takes a function $f$ and applies it to every element in a
-    list, while {\it fold} iteratively applies a function $g$ to
+    list, while \emph{fold} iteratively applies a function $g$ to
     aggregate results.}
 \label{figure:chapter2:functional}
 \end{figure}
 
-We can view {\it map} as a concise way to represent the transformation
+We can view \emph{map} as a concise way to represent the transformation
 of a dataset (as defined by the function $f$).  In the same vein, we
-can view {\it fold} as an aggregation operation, as defined by the
+can view \emph{fold} as an aggregation operation, as defined by the
 function $g$.  One immediate observation is that the application of
 $f$ to each item in a list (or more generally, to elements in a large
 dataset) can be parallelized in a straightforward manner, since each
 functional application happens in isolation.  In a cluster, these
 operations can be distributed across many different machines.  The
-{\it fold} operation, on the other hand, has more restrictions on data
+\emph{fold} operation, on the other hand, has more restrictions on data
 locality---elements in the list must be ``brought together'' before
 the function $g$ can be applied.  However, many real-world
-applications do not require $g$ to be applied to {\it all} elements of
+applications do not require $g$ to be applied to \emph{all} elements of
 the list.  To the extent that elements in the list can be divided into
 groups, the fold aggregations can also proceed in parallel.
 Furthermore, for operations that are commutative and associative,
-significant efficiencies can be gained in the {\it fold} operation
+significant efficiencies can be gained in the \emph{fold} operation
 through local aggregation and appropriate reordering.
 
 In a nutshell, we have described MapReduce.  The map phase in
-MapReduce roughly corresponds to the {\it map} operation in functional
+MapReduce roughly corresponds to the \emph{map} operation in functional
 programming, whereas the reduce phase in MapReduce roughly corresponds
-to the {\it fold} operation in functional programming.  As we will
+to the \emph{fold} operation in functional programming.  As we will
 discuss in detail shortly, the MapReduce execution framework
 coordinates the map and reduce phases of processing over large amounts
 of data on large clusters of commodity machines.
@@ -219,10 +219,10 @@ values may be primitives such as integers, floating point values,
 strings, and raw bytes, or they may be arbitrarily complex structures
 (lists, tuples, associative arrays, etc.).  Programmers typically need
 to define their own custom data types, although a number of libraries
-such as Protocol Buffers,\footnote{\tt
-http://code.google.com/p/protobuf/} Thrift,\footnote{\tt
-http://incubator.apache.org/thrift/} and Avro\footnote{\tt
-http://hadoop.apache.org/avro/} simplify the task.
+such as Protocol Buffers,\footnote{\texttt{
+http://code.google.com/p/protobuf/}} Thrift,\footnote{\texttt{
+http://incubator.apache.org/thrift/}} and Avro\footnote{\texttt{
+http://hadoop.apache.org/avro/}} simplify the task.
 
 Part of the design of MapReduce algorithms involves imposing the
 key-value structure on arbitrary datasets.  For a collection of web
@@ -446,8 +446,8 @@ instances of processor-intensive simulations running in parallel).
 \section{The Execution Framework}
 \label{chapter2:execution-framework}
 
-One of the most important idea behind MapReduce is separating the {\it
-what} of distributed processing from the {\it how}.  A MapReduce
+One of the most important idea behind MapReduce is separating the \emph{
+what} of distributed processing from the \emph{how}.  A MapReduce
 program, referred to as a job, consists of code for mappers and
 reducers (as well as combiners and partitioners to be discussed in the
 next section) packaged together with configuration parameters (such as
@@ -484,7 +484,7 @@ tasks''~\cite{Dean_Ghemawat_OSDI2004}).  Due to the barrier between
 the map and reduce tasks, the map phase of a job is only as fast as
 the slowest map task.  Similarly, the completion time of a job is
 bounded by the running time of the slowest reduce task.  As a result,
-the speed of a MapReduce job is sensitive to what are known as {\it
+the speed of a MapReduce job is sensitive to what are known as \emph{
 stragglers}, or tasks that take an usually long time to complete.  One
 cause of stragglers is flaky hardware:\ for example, a machine that is
 suffering from recoverable errors may become significantly slower.
@@ -507,7 +507,7 @@ processing the most frequent few elements will run much longer than
 the typical task.  Better local aggregation, discussed in the next
 chapter, is one possible solution to this problem.
 
-\paragraph{Data/code co-location.}  The phrase {\it data
+\paragraph{Data/code co-location.}  The phrase \emph{data
   distribution} is misleading, since one of the key ideas behind
 MapReduce is to move the code, not the data.  However, the more
 general point remains---in order for computation to occur, we need to
@@ -544,11 +544,11 @@ have finished emitting key-value pairs and all intermediate key-value
 pairs have been shuffled and sorted, since the execution framework
 cannot otherwise guarantee that all values associated with the same
 key have been gathered.  This is an important departure from
-functional programming:\ in a {\it fold} operation, the aggregation
+functional programming:\ in a \emph{fold} operation, the aggregation
 function $g$ is a function of the intermediate value and the next item
 in the list---which means that values can be lazily generated and
 aggregation can begin as soon as values are available.  In contrast,
-the reducer in MapReduce receives {\it all} values associated with the
+the reducer in MapReduce receives \emph{all} values associated with the
 same key at once.  However, it is possible to start copying
 intermediate key-value pairs over the network to the nodes running the
 reducers as soon as each mapper finishes---this is a common
@@ -620,7 +620,7 @@ operates in isolation and therefore does not have access to
 intermediate output from other mappers.  The combiner is provided keys
 and values associated with each key (the same types as the mapper
 output keys and values).  Critically, one cannot assume that a
-combiner will have the opportunity to process {\it all} values
+combiner will have the opportunity to process \emph{all} values
 associated with the same key.  The combiner can emit any number of
 key-value pairs, but the keys and values must be of the same type as
 the mapper output (same as the reducer input).\footnote{A note on the
@@ -677,7 +677,7 @@ parameters.  The execution framework handles everything else.
 \section{The Distributed File System}
 \label{chapter2:dfs}
 
-So far, we have mostly focused on the {\it processing} aspect of
+So far, we have mostly focused on the \emph{processing} aspect of
 data-intensive processing, but it is important to recognize that
 without data, there is nothing to compute on.  In high-performance
 computing (HPC) and many traditional cluster architectures, storage is
