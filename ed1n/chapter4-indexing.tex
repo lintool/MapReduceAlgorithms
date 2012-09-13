@@ -489,7 +489,7 @@ information).
     \EndProcedure
     \Procedure{Reduce}{$\textrm{tuple }\langle t, n \rangle, \textrm{tf }[ f ]$}
     \If{$t \ne t_{prev} \land t_{prev} \ne \emptyset$}
-      \State $\textsc{Emit}(\textrm{term }t, \textrm{ postings } P)$
+      \State $\textsc{Emit}(\textrm{term }t_{prev}, \textrm{ postings } P)$
       \State $P.\textsc{{\small Reset}}()$
     \EndIf
     \State $P.\textsc{{\small Add}}(\langle n, f \rangle)$
