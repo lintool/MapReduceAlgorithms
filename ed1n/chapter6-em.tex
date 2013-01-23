@@ -1180,7 +1180,7 @@ described in Section~\ref{chapter3:pairs-and-stripes}.  A \emph{pairs}
 approach that requires less memory at the cost of slower performance
 is also feasible.
 
-\begin{figure*}[p]
+\begin{figure*}[t]
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -1205,7 +1205,8 @@ is also feasible.
            \State $t \leftarrow t + 1$
         \EndFor
 
-        \State $T \gets \textrm{new }\textsc{AssociativeArray}\textrm{ of }\textsc{AssociativeArray}$\Comment{Transitions}
+        \State $T \gets \textrm{new }\textsc{AssociativeArray}\textrm{ of }\textsc{AssociativeArray}$
+        \State \Comment{Transitions}
         \For{$t = 1$ to $|\textbf{x}|-1$}  \Comment{Loop over observations}
         \ForAll{$q \in \mathcal{S}$}   \Comment{Loop over states}
         \ForAll{$r \in \mathcal{S}$}   \Comment{Loop over states}
@@ -1228,7 +1229,7 @@ is also feasible.
 \label{figure:chapter6:mr_hmm_mapper}
 \end{figure*}
 
-\begin{figure*}[p]
+\begin{figure*}[t]
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -1378,11 +1379,16 @@ Phrase-based translation works by learning how strings of words,
 called \emph{phrases}, translate between languages.\footnote{Phrases
   are simply sequences of words; they are not required to correspond
   to the definition of a phrase in any linguistic theory.}  Example
-phrase pairs for Spanish-English translation might include $\langle
-\textrm{\emph{los estudiantes}}, \textrm{\emph{the students}}\rangle$,
+phrase pairs for Spanish-English translation might include:
+
+\begin{quote}
+$\langle \textrm{\emph{los estudiantes}}, \textrm{\emph{the students}}\rangle$,
 $\langle \textrm{\emph{los estudiantes}}, \textrm{\emph{some
     students}}\rangle$, and $\langle \textrm{\emph{soy}},
-\textrm{\emph{i am}} \rangle$.  From a few hundred thousand sentences
+\textrm{\emph{i am}} \rangle$.
+\end{quote}
+
+\noindent From a few hundred thousand sentences
 of example translations, many millions of such phrase pairs may be
 automatically learned.
 
