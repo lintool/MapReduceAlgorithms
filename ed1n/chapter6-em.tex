@@ -208,7 +208,6 @@ parameters $\theta$ of a statistical model to some given data
 $\textbf{x}$.  Specifically, it says to select the parameter settings
 $\theta^*$ such that the likelihood of observing the training data
 given the model is maximized:
-
 \begin{equation}
 \theta^* = \arg \max_{\theta} \Pr(\textbf{X}=\textbf{x};\theta)
 \end{equation}
@@ -236,9 +235,7 @@ $Y$, so an observation of $X$ is equivalent to an observation of $Y$.
 
 \begin{figure*}
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.6]{figures/fig-ch6-em-marble1.pdf}
-\vspace{-0.3cm}
 \end{center}\caption{A simple marble game where a released marble takes one of two possible paths.  This game can be modeled using a Bernoulli random variable with parameter $p$, which indicates the probability that the marble will go to the right when it hits the peg.}\label{chapter6_figure_plinko}
 \end{figure*}
 
@@ -253,22 +250,20 @@ assuming that our samples are independent and identically distributed
 follows:\footnote{In this equation, $\delta$ is the Kroneker delta
   function which evaluates to 1 where its arguments are equal and 0
   otherwise.}
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \Pr(\textbf{x};p) & = & \prod_{j=1}^{10} p^{\delta(x_j,a)}(1-p)^{\delta(x_j,b)} \\
 &  =  & p^2 \cdot (1 - p)^8
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent Since $\log$ is a monotonically increasing function,
 maximizing $\log \Pr(\textbf{x};p)$ will give us the desired result.
 We can do this differentiating with respect to $p$ and finding where
 the resulting expression equals 0:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \frac{d \log \Pr(\textbf{x};p)}{dp} & = & 0\\
 \frac{d [ 2\cdot \log p + 8 \cdot \log (1-p) ]}{dp} & = & 0 \\
 \frac{2}{p} - \frac{8}{1-p} & = & 0
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent Solving for $p$ yields $0.2$, which is the intuitive result.
 Furthermore, it is straightforward to show that in $N$ trials where
@@ -299,9 +294,7 @@ one of three cups.  Note that both paths 1 and 2 lead to cup $b$.
 
 \begin{figure*}[t]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.6]{figures/fig-ch6-em-marble2.pdf}
-\vspace{-0.3cm}
 \end{center}\caption{A more complicated marble game where the released marble takes one of four possible paths.  We assume that we can only observe which cup the marble ends up in, not the specific path taken.}\label{chapter6_figure_plinko2}
 \end{figure*}
 
@@ -357,15 +350,13 @@ set designated $\mathcal{Y}$:\footnote{For this description, we assume
   does this simplify exposition, but discrete models are widely used
   in text processing.} Again, we assume that samples in the training
 data $\textbf{x}$ are i.i.d.:
-
-\begin{eqnarray*}
-\Pr(X=x) = \sum_{y \in \mathcal{Y}} \Pr(X=x,Y=y ; \theta) \\
-\end{eqnarray*}
+\begin{eqnarray}
+\Pr(X=x) = \sum_{y \in \mathcal{Y}} \Pr(X=x,Y=y ; \theta)
+\end{eqnarray}
 
 \noindent For a vector of training observations $\textbf{x} = \langle
 x_1,x_2, \ldots, x_{\ell} \rangle $, if we assume the samples are
 i.i.d.:
-
 \begin{equation}
 \Pr(\textbf{x};\theta) = \prod_{j=1}^{|\textbf{x}|} \sum_{y \in \mathcal{Y}} \Pr(X=x_j,Y=y ; \theta)
 \end{equation}
@@ -373,7 +364,6 @@ i.i.d.:
 \noindent Thus, the maximum (marginal) likelihood estimate of the
 model parameters $\theta^*$ given a vector of i.i.d. observations
 $\textbf{x}$ becomes:
-
 \begin{equation}
 \theta^* = \arg \max_{\theta} \prod_{j=1}^{|\textbf{x}|} \sum_{y \in \mathcal{Y}} \Pr(X=x_j,Y=y ; \theta)
 \end{equation}
@@ -388,7 +378,6 @@ Expectation maximization (EM) is an iterative algorithm that finds a
 successive series of parameter estimates $\theta^{(0)}$,
 $\theta^{(1)}$, $\ldots$ that improve the marginal likelihood of the
 training data.  That is, EM guarantees:
-
 \begin{equation}
 \prod_{j=1}^{|\textbf{x}|} \sum_{y \in \mathcal{Y}} \Pr(X=x_j,Y=y ; \theta^{(i+1)}) \ge \prod_{j=1}^{|\textbf{x}|} \sum_{y \in \mathcal{Y}} \Pr(X=x_j,Y=y ; \theta^{(i)})
 \end{equation}
@@ -418,22 +407,20 @@ which $x$ occurs in \textbf{x}.  Call this $q(X=x,Y=y;\theta^{(i)})$
 and note that it defines a joint probability distribution over
 $\mathcal{X} \times \mathcal{Y}$ in that $\sum_{(x,y) \in \mathcal{X}
   \times \mathcal{Y}} q(x,y) = 1$.
-
-\begin{equation}
-q(x,y;\theta^{(i)}) = f(x|\textbf{x}) \cdot \Pr(Y=y|X=x;\theta^{(i)})
-= f(x|\textbf{x}) \cdot \frac{\Pr(x,y;\theta^{(i)})}{\sum_{y'}
+\begin{eqnarray}
+q(x,y;\theta^{(i)}) & = & f(x|\textbf{x}) \cdot \Pr(Y=y|X=x;\theta^{(i)}) \\
+& = &f(x|\textbf{x}) \cdot \frac{\Pr(x,y;\theta^{(i)})}{\sum_{y'}
   \Pr(x,y';\theta^{(i)})}
-\end{equation}
+\end{eqnarray}
 
 \paragraph{\textbf{M-step.}}
 Compute new parameter settings that maximize the expected log of the
 probability of the joint distribution under the $q$-distribution that
 was computed in the E-step:
-
-\begin{eqnarray*}
-\theta^{(i+1)} &=& \arg \max_{\theta'} \mathbb{E}_{q(X=x,Y=y;\theta^{(i)})} \log \Pr(X=x,Y=y ; \theta') \\
-& = & \arg \max_{\theta'} \sum_{(x,y) \in \mathcal{X} \times \mathcal{Y}} q(X=x,Y=y;\theta^{(i)}) \cdot \log \Pr(X=x,Y=y ; \theta')
-\end{eqnarray*}
+\begin{eqnarray}
+\theta^{(i+1)} & = &\arg \max_{\theta'} \mathbb{E}_{q(X=x,Y=y;\theta^{(i)})} \log \Pr(X=x,Y=y ; \theta') \\
+& = &\arg \max_{\theta'} \sum_{(x,y) \in \mathcal{X} \times \mathcal{Y}} q(X=x,Y=y;\theta^{(i)}) \cdot \log \Pr(X=x,Y=y ; \theta') \nonumber
+\end{eqnarray}
 
 \noindent We omit the proof that the model with parameters
 $\theta^{(i+1)}$ will have equal or greater marginal likelihood on the
@@ -463,19 +450,18 @@ parameters $\theta^{(0)}=\langle p_0^{(0)}, p_1^{(0)}, p_2^{(0)}
 We need to compute the distribution $q(X=x,Y=y;\theta^{(i)})$, as
 defined above.  We first note that the relative frequency
 $f(x|\textbf{x})$ is:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 f(x|\textbf{x}) = \frac{N_x}{N}
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent Next, we observe that $\Pr(Y=0|X=a)=1$ and $\Pr(Y=3|X=c)=1$
 since cups $a$ and $c$ fully determine the value of the path variable
 $Y$.  The posterior probability of paths 1 and 2 are only non-zero
 when $X$ is $b$:
-
-\begin{equation}
-\Pr(1|b;\theta^{(i)}) = \frac{(1-p_0^{(i)}) p_1^{(i)}}{(1-p_0^{(i)}) p_1^{(i)} + p_0^{(i)} (1-p_2^{(i)})} \quad \Pr(2|b;\theta^{(i)}) = \frac{p_0^{(i)} (1-p_2^{(i)})}{(1-p_0^{(i)}) p_1^{(i)} + p_0^{(i)} (1-p_2^{(i)})}
-\end{equation}
+\begin{eqnarray}
+\Pr(1|b;\theta^{(i)}) &=& \frac{(1-p_0^{(i)}) p_1^{(i)}}{(1-p_0^{(i)}) p_1^{(i)} + p_0^{(i)} (1-p_2^{(i)})} \\
+\Pr(2|b;\theta^{(i)}) &=& \frac{p_0^{(i)} (1-p_2^{(i)})}{(1-p_0^{(i)}) p_1^{(i)} + p_0^{(i)} (1-p_2^{(i)})}
+\end{eqnarray}
 
 \noindent Except for the four cases just described, $\Pr(Y=y|X=x)$ is
 zero for all other values of $x$ and $y$ (regardless of the value of
@@ -486,7 +472,6 @@ We now need to maximize the expectation of $\log \Pr(X,Y;\theta')$
 (which will be a function in terms of the three parameter variables)
 under the $q$-distribution we computed in the E step.  The non-zero
 terms in the expectation are as follows:
-
 \begin{center}
 \begin{tabular}{c|c|c|c}
 $x$ & $y$ & $q(X=x,Y=y;\theta^{(i)})$ & $\log \Pr(X=x,Y=y;\theta')$ \\
@@ -503,10 +488,11 @@ yields the expectation we wish to maximize.  Each parameter can be
 optimized independently using differentiation.  The resulting optimal
 values are expressed in terms of the counts in $\textbf{x}$ and
 $\theta^{(i)}$:
-
-\begin{equation}
-p_0 = \frac{\Pr(2|b;\theta^{(i)}) \cdot N_b + N_c}{N} \quad\  p_1 = \frac{\Pr(1|b;\theta^{(i)}) \cdot N_b}{N_a + \Pr(1|b;\theta^{(i)}) \cdot N_b} \quad\   p_2 = \frac{N_c}{\Pr(2|b;\theta^{(i)}) \cdot N_b + N_c}
-\end{equation}
+\begin{eqnarray}
+p_0 &=& \frac{\Pr(2|b;\theta^{(i)}) \cdot N_b + N_c}{N} \\
+p_1 &=& \frac{\Pr(1|b;\theta^{(i)}) \cdot N_b}{N_a + \Pr(1|b;\theta^{(i)}) \cdot N_b} \\
+p_2 &=& \frac{N_c}{\Pr(2|b;\theta^{(i)}) \cdot N_b + N_c}
+\end{eqnarray}
 
 \noindent It is worth noting that the form of these expressions is
 quite similar to the fully observed maximum likelihood estimate.
@@ -578,7 +564,6 @@ in state $q$.\footnote{This is only one possible definition of an HMM,
 dense, but for many applications sparse parameterizations are useful.
 We further stipulate that $A_{q}(r) \ge 0$, $B_q(o) \ge 0$, and $\pi_q
 \ge 0$ for all $q$, $r$, and $o$, as well as that:
-
 \begin{equation}
 \sum_{r \in \mathcal{S}} A_{q}(r) = 1\ \forall q  \quad \quad \sum_{o \in \mathcal{O}} B_{q}(o) = 1\ \forall q   \quad \quad \sum_{q \in \mathcal{S}} \pi_q = 1 
 \end{equation}
@@ -613,16 +598,15 @@ and verb), and observations $\mathcal{O} = \{ \texttt{the},
 This example illustrates a key intuition behind many applications of
 HMMs:\ states correspond to equivalence classes or clustering of
 observations, and a single observation type may associated with
-several clusters (in this example, the word \texttt{wash} can be
+several clusters (in this example, the word \texttt{watch} can be
 generated by an \textsc{nn} or \textsc{v}, since wash can either be a
 noun or a verb).
 
 \begin{figure*}
 \begin{center}
-\vspace{0.2cm}
-\includegraphics[scale=0.58]{figures/fig-ch6-english-pos-hmm.pdf}
-\vspace{-0.3cm}
-\end{center}\caption{An example HMM that relates part-of-speech tags to vocabulary items in an English-like language.  Possible (probability $>0$) transitions for the Markov process are shown graphically. In the example outputs, the state sequences corresponding to the emissions are written beneath the emitted symbols.}\label{chapter6_hmm_example}
+\includegraphics[scale=0.6]{figures/fig-ch6-POS-HMM.pdf}
+\end{center}
+\caption{An example HMM that relates part-of-speech tags to vocabulary items in an English-like language.  Possible (probability $>0$) transitions for the Markov process are shown graphically. In the example outputs, the state sequences corresponding to the emissions are written beneath the emitted symbols.}\label{chapter6_hmm_example}
 \end{figure*}
 
 \subsection{Three Questions for Hidden Markov Models}
@@ -667,7 +651,7 @@ many sequences.
 \label{chapter6_forward}
 
 Given some observation sequence, for example $\textbf{x} = \langle
-\texttt{John}, \texttt{might}, \texttt{wash} \rangle$, Question 1 asks
+\texttt{John}, \texttt{might}, \texttt{watch} \rangle$, Question 1 asks
 what is the probability that this sequence was generated by an HMM
 $\mathcal{M} = \langle \mathcal{S}, \mathcal{O}, \theta \rangle$.  For
 the purposes of illustration, we assume that $\mathcal{M}$ is defined
@@ -695,18 +679,16 @@ Thus, $\alpha_t(q)$ is a two dimensional matrix (of size $|\textbf{x}|
 that the values of $\alpha_1(q)$ can be computed as the product of two
 independent probabilities:\ the probability of starting in state $q$
 and the probability of state $q$ generating $x_1$:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \alpha_1(q) = \pi_q \cdot B_q(x_1)
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent From this, it's not hard to see that the values of
 $\alpha_2(r)$ for every $r$ can be computed in terms of the
 $|\mathcal{S}|$ values in $\alpha_1(\cdot)$ and the observation $x_2$:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \alpha_2(r) =  B_r(x_2) \cdot \sum_{q \in \mathcal{S}} \alpha_1(q) \cdot A_q(r)
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent This works because there are $|\mathcal{S}|$ different ways
 to get to state $r$ at time $t=2$:\ starting from state
@@ -716,10 +698,9 @@ only by the state it is in at some time (not by how it got to that
 state), $\alpha_t(r)$ can always be computed in terms of the
 $|\mathcal{S}|$ values in $\alpha_{t-1}(\cdot)$ and the observation
 $x_t$:
-
-\begin{eqnarray*}
-\alpha_t(r) & = & B_r(x_t) \cdot \sum_{q \in \mathcal{S}} \alpha_{t-1}(q) \cdot A_q(r)  \\
-\end{eqnarray*}
+\begin{eqnarray}
+\alpha_t(r) & = & B_r(x_t) \cdot \sum_{q \in \mathcal{S}} \alpha_{t-1}(q) \cdot A_q(r)
+\end{eqnarray}
 
 \noindent We have now shown how to compute the probability of being in
 any state $q$ at any time $t$, having generated $\langle x_1, x_2,
@@ -748,10 +729,16 @@ result.
 
 \begin{figure*}
 \begin{center}
-\vspace{0.2cm}
-\includegraphics[scale=0.72]{figures/fig-ch6-q1.pdf}
-\vspace{-0.3cm}
-\end{center}\caption{Computing the probability of the sequence $\langle \texttt{John} , \texttt{might} , \texttt{wash} \rangle$ under the HMM given in Figure~\ref{chapter6_hmm_example} by explicitly summing over all possible sequence labels (upper panel) and using the forward algorithm (lower panel).}\label{chapter6_fig_question1}
+\includegraphics[scale=0.5]{figures/fig-ch6-enumerate.pdf}\\
+\begin{displaymath}
+\Pr(\textbf{x}) = \sum_{\textbf{y} \in \mathcal{Y}} \Pr(\textbf{x}, \textbf{y}; \theta) = 0.00018
+\end{displaymath} \\
+
+\includegraphics[scale=0.55]{figures/fig-ch6-q1new.pdf}\\
+\begin{displaymath}
+\Pr(\textbf{x}) = \sum_{q \in \mathcal{S}} \alpha_{3}(q) = 0.00018
+\end{displaymath}
+\end{center}\caption{Computing the probability of the sequence $\langle \texttt{John} , \texttt{might} , \texttt{watch} \rangle$ under the HMM given in Figure~\ref{chapter6_hmm_example} by explicitly summing over all possible sequence labels (top) and using the forward algorithm (bottom).}\label{chapter6_fig_question1}
 \end{figure*}
 
 \subsection{The Viterbi Algorithm}
@@ -762,7 +749,7 @@ sequence of states that generated the observations?  As with the
 previous question, the na\"{i}ve approach to solving this problem is
 to enumerate all possible labels and find the one with the highest
 joint probability.  Continuing with the example observation sequence
-$\textbf{x} = \langle \texttt{John} , \texttt{might} , \texttt{wash}
+$\textbf{x} = \langle \texttt{John} , \texttt{might} , \texttt{watch}
 \rangle$, examining the chart of probabilities in the upper panel of
 Figure~\ref{chapter6_fig_question1} shows that $\textbf{y}^* = \langle
 \textsc{nn}, \textsc{v}, \textsc{v} \rangle$ is the most likely
@@ -780,32 +767,29 @@ define $bp_t(q)$, the ``backpointer'', to be the state used in this
 sequence at time $t-1$.  The base case for the recursion is as follows
 (the state index of $-1$ is used as a placeholder since there is no
 previous best state at time $t=1$):
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \gamma_1(q) &=& \pi_q \cdot B_q(x_1) \\
 bp_1(q) & = & -1
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent The recursion is similar to that of the forward algorithm,
 except rather than summing over previous states, the \emph{maximum}
 value of all possible trajectories into state $r$ at time $t$ is
 computed.  Note that the backpointer simply records the index of the
 originating state---a separate computation is not necessary.
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \gamma_t(r) & = & \max_{q \in \mathcal{S}}  \gamma_{t-1}(q)  \cdot A_q(r) \cdot B_r(x_t)  \\
 bp_t(r) & = & \arg \max_{q \in \mathcal{S}} \gamma_{t-1}(q)  \cdot A_q(r) \cdot B_r(x_t)
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent To compute the best sequence of states, $\textbf{y}^*$, the
 state with the highest probability path at time $|\textbf{x}|$ is
 selected, and then the backpointers are followed, recursively, to
 construct the rest of the sequence:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 y_{|\textbf{x}|}^*& =& \arg \max_{q \in \mathcal{S}} \gamma_{|\textbf{x}|}(q)\\
 y_{t-1}^* &=& bp_t(y_t)
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent Figure~\ref{chapter6_fig_question2} illustrates a Viterbi
 trellis, including backpointers that have been used to compute the
@@ -813,10 +797,8 @@ most likely state sequence.
 
 \begin{figure*}[t]
 \begin{center}
-\vspace{0.2cm}
-\includegraphics[scale=0.72]{figures/fig-ch6-q2.pdf}
-\vspace{-0.3cm}
-\end{center}\caption{Computing the most likely state sequence that generated $\langle \texttt{John} , \texttt{might} , \texttt{wash} \rangle$ under the HMM given in Figure~\ref{chapter6_hmm_example} using the Viterbi algorithm.  The most likely state sequence is highlighted in bold and could be recovered programmatically by following backpointers from the maximal probability cell in the last column to the first column (thicker arrows).}\label{chapter6_fig_question2}
+\includegraphics[scale=0.55]{figures/fig-ch6-q2.pdf}
+\end{center}\caption{Computing the most likely state sequence that generated $\langle \texttt{John} , \texttt{might} , \texttt{watch} \rangle$ under the HMM given in Figure~\ref{chapter6_hmm_example} using the Viterbi algorithm.  The most likely state sequence is highlighted in bold and could be recovered programmatically by following backpointers from the maximal probability cell in the last column to the first column (thicker arrows).}\label{chapter6_fig_question2}
 \end{figure*}
 
 
@@ -841,9 +823,7 @@ citations \cite{Jelinek_1997,Rabiner_1990}.
 
 \begin{figure*}[t]
 \begin{center}
-\vspace{0.2cm}
-\includegraphics[scale=0.72]{figures/fig-ch6-q3a.pdf}
-\vspace{-0.3cm}
+\includegraphics[scale=0.55]{figures/fig-ch6-q3a.pdf}
 \end{center}\caption{A ``fully observable'' HMM training instance.  The output sequence is at the top of the figure, and the corresponding states and transitions are shown in the trellis below.}\label{chapter6_observable_hmm}
 \end{figure*}
 
@@ -863,13 +843,17 @@ example, the process starts in state $\textsc{nn}$; there is one
 $\textsc{nn} \rightarrow \textsc{v}$ transition and one $\textsc{v}
 \rightarrow \textsc{v}$ transition.  The $\textsc{nn}$ state emits
 $\texttt{John}$ in the first time step, and $\textsc{v}$ state emits
-$\texttt{might}$ and $\texttt{wash}$ in the second and third time
+$\texttt{might}$ and $\texttt{watch}$ in the second and third time
 steps, respectively. We also define $N(q)$ to be the number of times
 the process enters state $q$.  The maximum likelihood estimates of the
 parameters in the fully observable case are:
-
 \begin{eqnarray}
-\label{eq:chapter6_hmmopt} \pi_q = \frac{I(q)}{\ell = \sum_{r} I(r)} \quad \ A_q(r) = \frac{T(q \rightarrow r)}{N(q) = \sum_{r'} T(q \rightarrow r')} \quad\  B_q(o) = \frac{O(q \uparrow o)}{N(q) = \sum_{o'} O(q \uparrow o')}
+\label{eq:chapter6_hmmopt1} 
+\pi_q   &=& \frac{I(q)}{\ell = \sum_{r} I(r)} \quad \\
+\label{eq:chapter6_hmmopt2} 
+ A_q(r) &=& \frac{T(q \rightarrow r)}{N(q) = \sum_{r'} T(q \rightarrow r')} \quad\\
+\label{eq:chapter6_hmmopt3} 
+ B_q(o) &=& \frac{O(q \uparrow o)}{N(q) = \sum_{o'} O(q \uparrow o')}
 \end{eqnarray}
 
 \noindent For example, to compute the emission parameters from state
@@ -893,7 +877,6 @@ are expressed in terms of the \emph{expectations} of the counts
 referenced in the fully observed case, according to the posterior
 distribution over the latent variables given the observations
 $\textbf{x}$ and the parameters $\theta^{(i)}$:
-
 \begin{equation}
 \pi_q = \frac{\mathbb{E}[I(q)]}{\ell} \quad \quad A_q(r) = \frac{\mathbb{E}[T(q \rightarrow r)]}{\mathbb{E}[N(q)]} \quad \quad B_q(o) = \frac{\mathbb{E}[O(q \uparrow o)]}{\mathbb{E}[N(q)]}
 \label{chapter6_hmm_update}
@@ -907,13 +890,12 @@ there are $|\mathcal{S}|$ solving for the transition distributions
 $A_q(\cdot)$ from each state $q$; and $|\mathcal{S}|$ solving for the
 emissions distributions $B_q(\cdot)$ from each state $q$.
 Furthermore, we note that the following must hold:
-
 \begin{equation}
 \mathbb{E}[N(q)] = \sum_{r \in \mathcal{S}} \mathbb{E}[T(q \rightarrow r)] = \sum_{o \in \mathcal{O}} \mathbb{E}[O(q \uparrow o)]
 \end{equation}
 
 \noindent As a result, the optimization problems (i.e.,
-Equations~\ref{eq:chapter6_hmmopt}) require completely independent
+Equations~\ref{eq:chapter6_hmmopt1}--\ref{eq:chapter6_hmmopt3}) require completely independent
 sets of statistics, which we will utilize later to facilitate
 efficient parallelization in MapReduce.
 
@@ -951,7 +933,6 @@ summing over all time steps we compute the expected count of the
 number of times that a particular state generated a particular symbol.
 These two sets of expectations, which are written formally here, are
 sufficient to execute the M-step.
-
 \begin{eqnarray}
 \label{eq:chapter6_ex1} \mathbb{E}[O(q \uparrow o)]& =& \sum_{i=1}^{|\textbf{x}|} \Pr(y_i = q | \textbf{x}; \theta) \cdot \delta(x_i,o) \\
 \label{eq:chapter6_ex1a} \mathbb{E}[T(q \rightarrow r)] & = & \sum_{i=1}^{|\textbf{x}|-1} \Pr(y_i = q , y_{i+1} = r | \textbf{x}; \theta)
@@ -979,7 +960,6 @@ The algorithm for computing the backward probabilities is given a bit
 later.  Once the forward and backward probabilities have been
 computed, the state transition posterior probabilities and the
 emission posterior probabilities can be written as follows:
-
 \begin{eqnarray}
 \label{eq:chapter6_stateocprob} \Pr(y_i = q | \textbf{x}; \theta) & = & \alpha_i(q) \cdot \beta_i(q) \\
 \Pr(y_i = q , y_{i+1} = r | \textbf{x}; \theta) & = & \alpha_i(q) \cdot A_q(r) \cdot B_r(x_{i+1}) \cdot \beta_{i+1}(r) \label{eq:chapter6_transprob}
@@ -1006,9 +986,7 @@ we assume an HMM with $\mathcal{S} = \{ \textsc{s}_1, \textsc{s}_2,
 
 \begin{figure*}[t]
 \begin{center}
-\vspace{0.2cm}
-\includegraphics[scale=0.55]{figures/fig-ch6-HMM-forward-backward.pdf}
-\vspace{-0.3cm}
+\includegraphics[scale=0.6]{figures/fig-ch6-HMM-forward-backward.pdf}
 \end{center}\caption{Using forward and backward probabilities to compute the posterior probability of the dashed transition, given the observation sequence {\texttt{ a b b c b}.  The shaded area on the left corresponds to the forward probability $\alpha_{2}(\textsc{s}_2)$, and the shaded area on the right corresponds to the backward probability $\beta_3(\textsc{s}_2)$.}\label{chapter6_forwardbackward}}
 \end{figure*}
 
@@ -1017,12 +995,10 @@ Like the forward and Viterbi algorithms introduced above to answer
 Questions 1 and 2, the backward algorithm uses dynamic programming to
 incrementally compute $\beta_t(\cdot)$.  Its base case starts at time
 $|\textbf{x}|$, and is defined as follows:
-
 \label{chapter6_backward}
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \beta_{|\textbf{x}|}(q) = 1
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent To understand the intuition for this base case, keep in mind
 that since the backward probabilities $\beta_t(\cdot)$ are the
@@ -1030,10 +1006,9 @@ probability of generating the remainder of the sequence \emph{after}
 time $t$ (as well as being in some state), and since there is nothing
 left to generate after time $|\textbf{x}|$, the probability must be 1.
 The recursion is defined as follows:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \beta_{t}(q) = \sum_{r \in \mathcal{S}} \beta_{t+1}(r) \cdot A_q(r) \cdot B_r(x_{t+1})
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent Unlike the forward and Viterbi algorithms, the backward
 algorithm is computed from right to left and makes no reference to the
@@ -1426,25 +1401,26 @@ Figure~\ref{chapter6_figure_mtarch}.
 \begin{figure*}[p]
 \begin{center}
 \includegraphics[scale=0.7]{figures/fig-ch6-MT-arch.pdf}
-\vspace{-0.3cm}
 \end{center}\caption{The standard phrase-based machine translation architecture.  The translation model is constructed with phrases extracted from a word-aligned parallel corpus.  The language model is estimated from a monolingual corpus.  Both serve as input to the decoder, which performs the actual translation.}\label{chapter6_figure_mtarch}
 \end{figure*}
 
 \begin{figure*}[p]
 \begin{center}
 \includegraphics[scale=0.6]{figures/fig-ch6-MT-tiles.pdf}
-\vspace{-0.3cm}
 \end{center}\caption{Translation coverage of the sentence \emph{Maria no dio una bofetada a la bruja verde} by a phrase-based model. The best possible translation path is indicated with a dashed line.}\label{chapter6_figure_mttiles}
 \end{figure*}
 
-A language model gives the probability that a string of words
-$\textbf{w} = \langle w_1, w_2, \ldots , w_{n} \rangle$, written as
+A language model gives the probability that a string of words:
+\begin{displaymath}
+\textbf{w} = \langle w_1, w_2, \ldots , w_{n} \rangle, 
+\end{displaymath}
+written as
 $w_{1}^{n}$ for short, is a string in the target language.  By the
 chain rule of probability, we get:
-
-\begin{equation}
-\Pr(w_{1}^{n}) = \Pr(w_1) \Pr(w_2|w_1) \Pr(w_3|w_1^2) \ldots \Pr(w_n|w_1^{n-1}) = \prod_{k=1}^{n} \Pr(w_k|w_1^{k-1})
-\end{equation}
+\begin{eqnarray}
+\Pr(w_{1}^{n}) &= & \Pr(w_1) \Pr(w_2|w_1) \Pr(w_3|w_1^2) \ldots \Pr(w_n|w_1^{n-1}) \\
+              &= & \prod_{k=1}^{n} \Pr(w_k|w_1^{k-1})
+\end{eqnarray}
 
 \noindent Due to the extremely large number of parameters involved in
 estimating such a model directly, it is customary to make the \emph{
@@ -1452,7 +1428,6 @@ estimating such a model directly, it is customary to make the \emph{
 local context.  That is, an \emph{n}-gram language model is equivalent
 to a ($n-1$)\emph{th}-order Markov model.  Thus, we can approximate
 $P(w_k|w_1^{k-1})$ as follows:
-
 \begin{eqnarray}
 \textrm{bigrams:} & P(w_k|w_1^{k-1}) & \approx P(w_k|w_{k-1}) \\
 \textrm{trigrams:} & P(w_k|w_1^{k-1}) & \approx P(w_k|w_{k-1} w_{k-2}) \\
@@ -1563,10 +1538,9 @@ means that the variable $a_i$ indicates the source word position of
 the $i^{\textrm{\emph{th}}}$ target word generated, and $|\textbf{a}|
 = |\textbf{e}|$.  Using these assumptions, the probability of an
 alignment and translation can be written as follows:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \Pr(\textbf{e}, \textbf{a} | \textbf{f}) =  \underbrace{  \Pr(\textbf{a} | \textbf{f} , \textbf{e}) }_{\textrm{Alignment probability}} \times  \underbrace{ \prod_{i=1}^{|\textbf{e}|} \Pr(e_i|f_{a_i}) }_{\textrm{Lexical probability}}
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent Since we have parallel corpora consisting of only $\langle
 \textbf{f}, \textbf{e} \rangle$ pairs, we can learn the parameters for
@@ -1577,10 +1551,9 @@ of an alignment depend only on the position of the previous aligned
 word we capture a valuable insight (namely, words that are nearby in
 the source language will tend to be nearby in the target language),
 and our model acquires the structure of an HMM \cite{Vogel_1996}:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \Pr(\textbf{e}, \textbf{a} | \textbf{f}) & = & \underbrace{\prod_{i=1}^{|\textbf{e}|} \Pr(a_i | a_{i-1})}_{\textrm{Transition probability}} \times \underbrace{\prod_{i=1}^{|\textbf{e}|} \Pr(e_i|f_{a_i})}_{\textrm{Emission probability}} 
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent This model can be trained using the forward-backward
 algorithm described in the previous section, summing over all settings
@@ -1592,10 +1565,9 @@ simplify the alignment probability model, and use this simpler model
 to learn initial lexical translation (emission) parameters for the
 HMM.  The favored simplification is to assert that all alignments are
 uniformly probable:
-
-\begin{eqnarray*}
+\begin{eqnarray}
 \Pr(\textbf{e}, \textbf{a} | \textbf{f}) & = & \frac{1}{|\textbf{f}|^{|\textbf{e}|}} \times \prod_{i=1}^{|\textbf{e}|} \Pr(e_i|f_{a_i}) 
-\end{eqnarray*}
+\end{eqnarray}
 
 \noindent This model is known as IBM Model 1.  It is attractive for
 initialization because it is convex everywhere, and therefore EM will
@@ -1671,14 +1643,12 @@ many people in the MT research community.
 \begin{figure*}[p]
 \begin{center}
 \includegraphics[scale=0.6]{figures/fig-ch6-GIZA-timing.pdf}
-\vspace{-0.3cm}
 \end{center}\caption{Running times of Giza++ (baseline single-core system) for Model 1 and HMM training iterations at various corpus sizes.}\label{chapter6_figure_giza_timing}
 \end{figure*}
 
 \begin{figure*}[p]
 \begin{center}
 \includegraphics[scale=0.6]{figures/fig-ch6-alignment-timing.pdf}
-\vspace{-0.3cm}
 \end{center}\caption{Running times of our MapReduce implementation of Model 1 and HMM training iterations at various corpus sizes.  For reference, $1/38$ running times of the Giza++ models are shown.}\label{chapter6_figure_mr_timing}
 \end{figure*}
 
@@ -1748,7 +1718,6 @@ functions.
 Assume that we have some real-valued function $F(\theta)$ where
 $\theta$ is a $k$-dimensional vector and that $F$ is differentiable
 with respect to $\theta$.  Its gradient is defined as:
-
 \begin{equation}
 \nabla F(\theta) = \left\langle \frac{\partial F}{\partial \theta_1}(\theta), \frac{\partial F}{\partial \theta_2}(\theta) , \ldots , \frac{\partial F}{\partial \theta_k}(\theta) \right\rangle
 \end{equation}
@@ -1758,7 +1727,6 @@ in gradient-based optimization.  First, the gradient $\nabla F$ is a
 vector field that points in the direction of the greatest increase of
 $F$ and whose magnitude indicates the rate of increase.  Second, if
 $\theta^*$ is a (local) minimum of F, then the following is true:
-
 \begin{equation}
 \nabla F(\theta^*) = 0
 \end{equation}
@@ -1768,7 +1736,6 @@ series of parameter estimates $\theta^{(1)}, \theta^{(2)}, \ldots$ by
 starting with some initial parameter settings $\theta^{(1)}$ and
 updating parameters through successive iterations according to the
 following rule:
-
 \begin{equation}
 \theta^{(i+1)} = \theta^{(i)} - \eta^{(i)} \nabla F(\theta^{(i)})
 \label{chapter6_eq_grad_opt1}
@@ -1843,7 +1810,6 @@ Log-linear models are particularly useful for supervised learning
 $\textbf{y} \in \mathcal{Y}$ is available for every $\textbf{x} \in
 \mathcal{X}$ in the training data.  In this case, it is possible to
 directly model the conditional distribution of label given input:
-
 \begin{equation}
 \Pr(\textbf{y} | \textbf{x} ; \theta) = \frac{\exp \sum_i \theta_i \cdot H_i(\textbf{x}, \textbf{y})}{\sum_{\textbf{y}'}\exp \sum_i \theta_i \cdot H_i(\textbf{x}, \textbf{y}')}
 \end{equation}
@@ -1854,7 +1820,6 @@ the model is selected so as to minimize the negative conditional log
 likelihood of a set of training instances $\langle \langle \textbf{x}
 , \textbf{y} \rangle_1 , \langle \textbf{x} , \textbf{y} \rangle_2 ,
 \ldots \rangle$, which we assume to be i.i.d.:
-
 \begin{eqnarray}
 F(\theta) & = & \sum_{\langle \textbf{x} , \textbf{y} \rangle} - \log \Pr(\textbf{y} | \textbf{x} ; \theta) \label{chapter6_eq_meobj} \\
 \theta^* & = & \arg \min_\theta F(\theta)
@@ -1867,7 +1832,6 @@ $F$ with respect to $\theta_i$ can be shown to have the following form
 \cite{Smith_2004}:\footnote{This assumes that when $\langle
   \textbf{x}, \textbf{y} \rangle$ is present the model is fully
   observed (i.e., there are no additional latent variables).}
-
 \begin{equation}
 \frac{\partial F}{\partial \theta_i}(\theta) = \sum_{\langle \textbf{x} , \textbf{y} \rangle} \left[ H_i(\textbf{x},\textbf{y}) - \mathbb{E}_{\Pr(\textbf{y}' | \textbf{x} ; \theta)}[H_i(\textbf{x},\textbf{y}')] \right]
 \end{equation}
