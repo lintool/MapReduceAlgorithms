@@ -139,9 +139,7 @@ zero.
 
 \begin{figure}[t]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.6]{figures/fig-ch2-functional-programming.pdf}
-\vspace{-0.3cm}
 \end{center}
 \caption{Illustration of \emph{map} and \emph{fold}, two higher-order
   functions commonly used together in functional programming:\ \emph{
@@ -268,9 +266,7 @@ two-stage processing structure.
 
 \begin{figure}[p]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.6]{figures/fig-ch2-MapReduce-simple.pdf}
-\vspace{-0.3cm}
 \end{center}
 \caption{Simplified view of MapReduce.  Mappers are applied to all
   input key-value pairs, which generate an arbitrary number of
@@ -280,7 +276,11 @@ two-stage processing structure.
 \label{figure:chapter2:MapReduce-simple}
 \end{figure}
 
-\begin{figure}[p]
+\begin{algorithm}[p]
+\caption{Word count}
+\label{algorithm:chapter2:word-count:basic}
+The mapper emits an intermediate key-value pair for each word in a
+document. The reducer sums up all counts for each word.
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -304,14 +304,10 @@ two-stage processing structure.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for the word count algorithm in MapReduce.  The
-    mapper emits an intermediate key-value pair for each word in a
-    document.  The reducer sums up all counts for each word.}
-\label{chapter2:word-count:basic}
-\end{figure}
+\end{algorithm}
 
 A simple word count algorithm in MapReduce is shown in
-Figure~\ref{chapter2:word-count:basic}.  This algorithm counts the
+Algorithm~\ref{algorithm:chapter2:word-count:basic}.  This algorithm counts the
 number of occurrences of every word in a text collection, which may be
 the first step in, for example, building a unigram language model
 (i.e., probability distribution over words in a collection).  Input
@@ -600,7 +596,7 @@ applications due to the Zipfian distribution of word occurrences.
 Combiners are an optimization in MapReduce that allow for local
 aggregation before the shuffle and sort phase.  We can motivate the
 need for combiners by considering the word count algorithm in
-Figure~\ref{chapter2:word-count:basic}, which emits a key-value pair
+Algorithm~\ref{algorithm:chapter2:word-count:basic}, which emits a key-value pair
 for each word in the collection.  Furthermore, all these key-value
 pairs need to be copied across the network, and so the amount of
 intermediate data will be larger than the input collection itself.
@@ -663,9 +659,7 @@ parameters.  The execution framework handles everything else.
 
 \begin{figure}[t]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.6]{figures/fig-ch2-MapReduce-complete.pdf}
-\vspace{-0.3cm}
 \end{center}
 \caption{Complete view of MapReduce, illustrating combiners and
   partitioners in addition to mappers and reducers.  Combiners can be
@@ -743,9 +737,7 @@ diagram describing GFS~\cite{Ghemawat_etal_SOSP2003}.
 
 \begin{figure}[t]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.6]{figures/fig-ch2-HDFS.pdf}
-\vspace{-0.3cm}
 \end{center}
 \caption{The architecture of HDFS.  The namenode (master) is responsible for maintaining the file
   namespace and directing clients to datanodes (slaves) that actually
@@ -949,9 +941,7 @@ a datanode daemon, for serving HDFS data.
 
 \begin{figure}[t]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.6]{figures/fig-ch2-Hadoop.pdf}
-\vspace{-0.3cm}
 \end{center}
 \caption{Architecture of a complete Hadoop cluster, which consists of
   three separate components:\ the HDFS master (called the namenode),

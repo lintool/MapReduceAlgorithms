@@ -250,20 +250,20 @@ assuming that our samples are independent and identically distributed
 follows:\footnote{In this equation, $\delta$ is the Kroneker delta
   function which evaluates to 1 where its arguments are equal and 0
   otherwise.}
-\begin{eqnarray}
-\Pr(\textbf{x};p) & = & \prod_{j=1}^{10} p^{\delta(x_j,a)}(1-p)^{\delta(x_j,b)} \\
-&  =  & p^2 \cdot (1 - p)^8
-\end{eqnarray}
+\begin{align}
+\Pr(\textbf{x};p) & = \prod_{j=1}^{10} p^{\delta(x_j,a)}(1-p)^{\delta(x_j,b)} \\
+&  = p^2 \cdot (1 - p)^8
+\end{align}
 
 \noindent Since $\log$ is a monotonically increasing function,
 maximizing $\log \Pr(\textbf{x};p)$ will give us the desired result.
 We can do this differentiating with respect to $p$ and finding where
 the resulting expression equals 0:
-\begin{eqnarray}
-\frac{d \log \Pr(\textbf{x};p)}{dp} & = & 0\\
-\frac{d [ 2\cdot \log p + 8 \cdot \log (1-p) ]}{dp} & = & 0 \\
-\frac{2}{p} - \frac{8}{1-p} & = & 0
-\end{eqnarray}
+\begin{align}
+\frac{d \log \Pr(\textbf{x};p)}{dp} & = 0\\
+\frac{d [ 2\cdot \log p + 8 \cdot \log (1-p) ]}{dp} & = 0 \\
+\frac{2}{p} - \frac{8}{1-p} & = 0
+\end{align}
 
 \noindent Solving for $p$ yields $0.2$, which is the intuitive result.
 Furthermore, it is straightforward to show that in $N$ trials where
@@ -350,9 +350,9 @@ set designated $\mathcal{Y}$:\footnote{For this description, we assume
   does this simplify exposition, but discrete models are widely used
   in text processing.} Again, we assume that samples in the training
 data $\textbf{x}$ are i.i.d.:
-\begin{eqnarray}
+\begin{align}
 \Pr(X=x) = \sum_{y \in \mathcal{Y}} \Pr(X=x,Y=y ; \theta)
-\end{eqnarray}
+\end{align}
 
 \noindent For a vector of training observations $\textbf{x} = \langle
 x_1,x_2, \ldots, x_{\ell} \rangle $, if we assume the samples are
@@ -407,20 +407,20 @@ which $x$ occurs in \textbf{x}.  Call this $q(X=x,Y=y;\theta^{(i)})$
 and note that it defines a joint probability distribution over
 $\mathcal{X} \times \mathcal{Y}$ in that $\sum_{(x,y) \in \mathcal{X}
   \times \mathcal{Y}} q(x,y) = 1$.
-\begin{eqnarray}
-q(x,y;\theta^{(i)}) & = & f(x|\textbf{x}) \cdot \Pr(Y=y|X=x;\theta^{(i)}) \\
-& = &f(x|\textbf{x}) \cdot \frac{\Pr(x,y;\theta^{(i)})}{\sum_{y'}
+\begin{align}
+q(x,y;\theta^{(i)}) & = f(x|\textbf{x}) \cdot \Pr(Y=y|X=x;\theta^{(i)}) \\
+& = f(x|\textbf{x}) \cdot \frac{\Pr(x,y;\theta^{(i)})}{\sum_{y'}
   \Pr(x,y';\theta^{(i)})}
-\end{eqnarray}
+\end{align}
 
 \paragraph{\textbf{M-step.}}
 Compute new parameter settings that maximize the expected log of the
 probability of the joint distribution under the $q$-distribution that
 was computed in the E-step:
-\begin{eqnarray}
-\theta^{(i+1)} & = &\arg \max_{\theta'} \mathbb{E}_{q(X=x,Y=y;\theta^{(i)})} \log \Pr(X=x,Y=y ; \theta') \\
-& = &\arg \max_{\theta'} \sum_{(x,y) \in \mathcal{X} \times \mathcal{Y}} q(X=x,Y=y;\theta^{(i)}) \cdot \log \Pr(X=x,Y=y ; \theta') \nonumber
-\end{eqnarray}
+\begin{align}
+\theta^{(i+1)} & = \arg \max_{\theta'} \mathbb{E}_{q(X=x,Y=y;\theta^{(i)})} \log \Pr(X=x,Y=y ; \theta') \\
+& = \arg \max_{\theta'} \sum_{(x,y) \in \mathcal{X} \times \mathcal{Y}} q(X=x,Y=y;\theta^{(i)}) \cdot \log \Pr(X=x,Y=y ; \theta')r
+\end{align}
 
 \noindent We omit the proof that the model with parameters
 $\theta^{(i+1)}$ will have equal or greater marginal likelihood on the
@@ -450,18 +450,18 @@ parameters $\theta^{(0)}=\langle p_0^{(0)}, p_1^{(0)}, p_2^{(0)}
 We need to compute the distribution $q(X=x,Y=y;\theta^{(i)})$, as
 defined above.  We first note that the relative frequency
 $f(x|\textbf{x})$ is:
-\begin{eqnarray}
+\begin{align}
 f(x|\textbf{x}) = \frac{N_x}{N}
-\end{eqnarray}
+\end{align}
 
 \noindent Next, we observe that $\Pr(Y=0|X=a)=1$ and $\Pr(Y=3|X=c)=1$
 since cups $a$ and $c$ fully determine the value of the path variable
 $Y$.  The posterior probability of paths 1 and 2 are only non-zero
 when $X$ is $b$:
-\begin{eqnarray}
-\Pr(1|b;\theta^{(i)}) &=& \frac{(1-p_0^{(i)}) p_1^{(i)}}{(1-p_0^{(i)}) p_1^{(i)} + p_0^{(i)} (1-p_2^{(i)})} \\
-\Pr(2|b;\theta^{(i)}) &=& \frac{p_0^{(i)} (1-p_2^{(i)})}{(1-p_0^{(i)}) p_1^{(i)} + p_0^{(i)} (1-p_2^{(i)})}
-\end{eqnarray}
+\begin{align}
+\Pr(1|b;\theta^{(i)}) &= \frac{(1-p_0^{(i)}) p_1^{(i)}}{(1-p_0^{(i)}) p_1^{(i)} + p_0^{(i)} (1-p_2^{(i)})} \\
+\Pr(2|b;\theta^{(i)}) &= \frac{p_0^{(i)} (1-p_2^{(i)})}{(1-p_0^{(i)}) p_1^{(i)} + p_0^{(i)} (1-p_2^{(i)})}
+\end{align}
 
 \noindent Except for the four cases just described, $\Pr(Y=y|X=x)$ is
 zero for all other values of $x$ and $y$ (regardless of the value of
@@ -488,11 +488,11 @@ yields the expectation we wish to maximize.  Each parameter can be
 optimized independently using differentiation.  The resulting optimal
 values are expressed in terms of the counts in $\textbf{x}$ and
 $\theta^{(i)}$:
-\begin{eqnarray}
-p_0 &=& \frac{\Pr(2|b;\theta^{(i)}) \cdot N_b + N_c}{N} \\
-p_1 &=& \frac{\Pr(1|b;\theta^{(i)}) \cdot N_b}{N_a + \Pr(1|b;\theta^{(i)}) \cdot N_b} \\
-p_2 &=& \frac{N_c}{\Pr(2|b;\theta^{(i)}) \cdot N_b + N_c}
-\end{eqnarray}
+\begin{align}
+p_0 &= \frac{\Pr(2|b;\theta^{(i)}) \cdot N_b + N_c}{N} \\
+p_1 &= \frac{\Pr(1|b;\theta^{(i)}) \cdot N_b}{N_a + \Pr(1|b;\theta^{(i)}) \cdot N_b} \\
+p_2 &= \frac{N_c}{\Pr(2|b;\theta^{(i)}) \cdot N_b + N_c}
+\end{align}
 
 \noindent It is worth noting that the form of these expressions is
 quite similar to the fully observed maximum likelihood estimate.
@@ -679,16 +679,16 @@ Thus, $\alpha_t(q)$ is a two dimensional matrix (of size $|\textbf{x}|
 that the values of $\alpha_1(q)$ can be computed as the product of two
 independent probabilities:\ the probability of starting in state $q$
 and the probability of state $q$ generating $x_1$:
-\begin{eqnarray}
+\begin{align}
 \alpha_1(q) = \pi_q \cdot B_q(x_1)
-\end{eqnarray}
+\end{align}
 
 \noindent From this, it's not hard to see that the values of
 $\alpha_2(r)$ for every $r$ can be computed in terms of the
 $|\mathcal{S}|$ values in $\alpha_1(\cdot)$ and the observation $x_2$:
-\begin{eqnarray}
+\begin{align}
 \alpha_2(r) =  B_r(x_2) \cdot \sum_{q \in \mathcal{S}} \alpha_1(q) \cdot A_q(r)
-\end{eqnarray}
+\end{align}
 
 \noindent This works because there are $|\mathcal{S}|$ different ways
 to get to state $r$ at time $t=2$:\ starting from state
@@ -698,9 +698,9 @@ only by the state it is in at some time (not by how it got to that
 state), $\alpha_t(r)$ can always be computed in terms of the
 $|\mathcal{S}|$ values in $\alpha_{t-1}(\cdot)$ and the observation
 $x_t$:
-\begin{eqnarray}
-\alpha_t(r) & = & B_r(x_t) \cdot \sum_{q \in \mathcal{S}} \alpha_{t-1}(q) \cdot A_q(r)
-\end{eqnarray}
+\begin{align}
+\alpha_t(r) = B_r(x_t) \cdot \sum_{q \in \mathcal{S}} \alpha_{t-1}(q) \cdot A_q(r)
+\end{align}
 
 \noindent We have now shown how to compute the probability of being in
 any state $q$ at any time $t$, having generated $\langle x_1, x_2,
@@ -767,29 +767,29 @@ define $bp_t(q)$, the ``backpointer'', to be the state used in this
 sequence at time $t-1$.  The base case for the recursion is as follows
 (the state index of $-1$ is used as a placeholder since there is no
 previous best state at time $t=1$):
-\begin{eqnarray}
-\gamma_1(q) &=& \pi_q \cdot B_q(x_1) \\
-bp_1(q) & = & -1
-\end{eqnarray}
+\begin{align}
+\gamma_1(q) &= \pi_q \cdot B_q(x_1) \\
+bp_1(q) & = -1
+\end{align}
 
 \noindent The recursion is similar to that of the forward algorithm,
 except rather than summing over previous states, the \emph{maximum}
 value of all possible trajectories into state $r$ at time $t$ is
 computed.  Note that the backpointer simply records the index of the
 originating state---a separate computation is not necessary.
-\begin{eqnarray}
-\gamma_t(r) & = & \max_{q \in \mathcal{S}}  \gamma_{t-1}(q)  \cdot A_q(r) \cdot B_r(x_t)  \\
-bp_t(r) & = & \arg \max_{q \in \mathcal{S}} \gamma_{t-1}(q)  \cdot A_q(r) \cdot B_r(x_t)
-\end{eqnarray}
+\begin{align}
+\gamma_t(r) & = \max_{q \in \mathcal{S}}  \gamma_{t-1}(q)  \cdot A_q(r) \cdot B_r(x_t)  \\
+bp_t(r) & = \arg \max_{q \in \mathcal{S}} \gamma_{t-1}(q)  \cdot A_q(r) \cdot B_r(x_t)
+\end{align}
 
 \noindent To compute the best sequence of states, $\textbf{y}^*$, the
 state with the highest probability path at time $|\textbf{x}|$ is
 selected, and then the backpointers are followed, recursively, to
 construct the rest of the sequence:
-\begin{eqnarray}
-y_{|\textbf{x}|}^*& =& \arg \max_{q \in \mathcal{S}} \gamma_{|\textbf{x}|}(q)\\
-y_{t-1}^* &=& bp_t(y_t)
-\end{eqnarray}
+\begin{align}
+y_{|\textbf{x}|}^*& = \arg \max_{q \in \mathcal{S}} \gamma_{|\textbf{x}|}(q)\\
+y_{t-1}^* &= bp_t(y_t)
+\end{align}
 
 \noindent Figure~\ref{chapter6_fig_question2} illustrates a Viterbi
 trellis, including backpointers that have been used to compute the
@@ -847,14 +847,14 @@ $\texttt{might}$ and $\texttt{watch}$ in the second and third time
 steps, respectively. We also define $N(q)$ to be the number of times
 the process enters state $q$.  The maximum likelihood estimates of the
 parameters in the fully observable case are:
-\begin{eqnarray}
+\begin{align}
 \label{eq:chapter6_hmmopt1} 
-\pi_q   &=& \frac{I(q)}{\ell = \sum_{r} I(r)} \quad \\
+\pi_q   &= \frac{I(q)}{\ell = \sum_{r} I(r)} \quad \\
 \label{eq:chapter6_hmmopt2} 
- A_q(r) &=& \frac{T(q \rightarrow r)}{N(q) = \sum_{r'} T(q \rightarrow r')} \quad\\
+ A_q(r) &= \frac{T(q \rightarrow r)}{N(q) = \sum_{r'} T(q \rightarrow r')} \quad\\
 \label{eq:chapter6_hmmopt3} 
- B_q(o) &=& \frac{O(q \uparrow o)}{N(q) = \sum_{o'} O(q \uparrow o')}
-\end{eqnarray}
+ B_q(o) &= \frac{O(q \uparrow o)}{N(q) = \sum_{o'} O(q \uparrow o')}
+\end{align}
 
 \noindent For example, to compute the emission parameters from state
 $\textsc{nn}$, we simply need to keep track of the number of times the
@@ -933,10 +933,10 @@ summing over all time steps we compute the expected count of the
 number of times that a particular state generated a particular symbol.
 These two sets of expectations, which are written formally here, are
 sufficient to execute the M-step.
-\begin{eqnarray}
-\label{eq:chapter6_ex1} \mathbb{E}[O(q \uparrow o)]& =& \sum_{i=1}^{|\textbf{x}|} \Pr(y_i = q | \textbf{x}; \theta) \cdot \delta(x_i,o) \\
-\label{eq:chapter6_ex1a} \mathbb{E}[T(q \rightarrow r)] & = & \sum_{i=1}^{|\textbf{x}|-1} \Pr(y_i = q , y_{i+1} = r | \textbf{x}; \theta)
-\end{eqnarray}
+\begin{align}
+\label{eq:chapter6_ex1} \mathbb{E}[O(q \uparrow o)]& = \sum_{i=1}^{|\textbf{x}|} \Pr(y_i = q | \textbf{x}; \theta) \cdot \delta(x_i,o) \\
+\label{eq:chapter6_ex1a} \mathbb{E}[T(q \rightarrow r)] & = \sum_{i=1}^{|\textbf{x}|-1} \Pr(y_i = q , y_{i+1} = r | \textbf{x}; \theta)
+\end{align}
 
 \paragraph{\textbf{Posterior probabilities.}}
 
@@ -960,10 +960,10 @@ The algorithm for computing the backward probabilities is given a bit
 later.  Once the forward and backward probabilities have been
 computed, the state transition posterior probabilities and the
 emission posterior probabilities can be written as follows:
-\begin{eqnarray}
-\label{eq:chapter6_stateocprob} \Pr(y_i = q | \textbf{x}; \theta) & = & \alpha_i(q) \cdot \beta_i(q) \\
-\Pr(y_i = q , y_{i+1} = r | \textbf{x}; \theta) & = & \alpha_i(q) \cdot A_q(r) \cdot B_r(x_{i+1}) \cdot \beta_{i+1}(r) \label{eq:chapter6_transprob}
-\end{eqnarray}
+\begin{align}
+\label{eq:chapter6_stateocprob} \Pr(y_i = q | \textbf{x}; \theta) & = \alpha_i(q) \cdot \beta_i(q) \\
+\Pr(y_i = q , y_{i+1} = r | \textbf{x}; \theta) & = \alpha_i(q) \cdot A_q(r) \cdot B_r(x_{i+1}) \cdot \beta_{i+1}(r) \label{eq:chapter6_transprob}
+\end{align}
 
 \noindent Equation~\ref{eq:chapter6_stateocprob} is the probability of
 being in state $q$ at time $i$, given $\textbf{x}$, and the
@@ -996,9 +996,9 @@ Questions 1 and 2, the backward algorithm uses dynamic programming to
 incrementally compute $\beta_t(\cdot)$.  Its base case starts at time
 $|\textbf{x}|$, and is defined as follows:
 \label{chapter6_backward}
-\begin{eqnarray}
+\begin{align}
 \beta_{|\textbf{x}|}(q) = 1
-\end{eqnarray}
+\end{align}
 
 \noindent To understand the intuition for this base case, keep in mind
 that since the backward probabilities $\beta_t(\cdot)$ are the
@@ -1006,9 +1006,9 @@ probability of generating the remainder of the sequence \emph{after}
 time $t$ (as well as being in some state), and since there is nothing
 left to generate after time $|\textbf{x}|$, the probability must be 1.
 The recursion is defined as follows:
-\begin{eqnarray}
+\begin{align}
 \beta_{t}(q) = \sum_{r \in \mathcal{S}} \beta_{t+1}(r) \cdot A_q(r) \cdot B_r(x_{t+1})
-\end{eqnarray}
+\end{align}
 
 \noindent Unlike the forward and Viterbi algorithms, the backward
 algorithm is computed from right to left and makes no reference to the
@@ -1323,10 +1323,9 @@ process as a statistical process with some parameters $\theta$
 relating strings in a source language (typically denoted as
 $\textbf{f}$) to strings in a target language (typically denoted as
 $\textbf{e}$):
-
-\begin{equation}
+\begin{align}
 \textbf{e}^* = \arg \max_{\textbf{e}} \Pr(\textbf{e} | \textbf{f} ; \theta)
-\end{equation}
+\end{align}
 
 With the statistical approach, translation systems can be developed
 cheaply and quickly for any language pair, as long as there is
@@ -1417,10 +1416,10 @@ A language model gives the probability that a string of words:
 written as
 $w_{1}^{n}$ for short, is a string in the target language.  By the
 chain rule of probability, we get:
-\begin{eqnarray}
-\Pr(w_{1}^{n}) &= & \Pr(w_1) \Pr(w_2|w_1) \Pr(w_3|w_1^2) \ldots \Pr(w_n|w_1^{n-1}) \\
-              &= & \prod_{k=1}^{n} \Pr(w_k|w_1^{k-1})
-\end{eqnarray}
+\begin{align}
+\Pr(w_{1}^{n}) &= \Pr(w_1) \Pr(w_2|w_1) \Pr(w_3|w_1^2) \ldots \Pr(w_n|w_1^{n-1}) \\
+              &= \prod_{k=1}^{n} \Pr(w_k|w_1^{k-1})
+\end{align}
 
 \noindent Due to the extremely large number of parameters involved in
 estimating such a model directly, it is customary to make the \emph{
@@ -1428,11 +1427,11 @@ estimating such a model directly, it is customary to make the \emph{
 local context.  That is, an \emph{n}-gram language model is equivalent
 to a ($n-1$)\emph{th}-order Markov model.  Thus, we can approximate
 $P(w_k|w_1^{k-1})$ as follows:
-\begin{eqnarray}
-\textrm{bigrams:} & P(w_k|w_1^{k-1}) & \approx P(w_k|w_{k-1}) \\
-\textrm{trigrams:} & P(w_k|w_1^{k-1}) & \approx P(w_k|w_{k-1} w_{k-2}) \\
-\textrm{\emph{n}-grams:} & P(w_k|w_1^{k-1}) & \approx  P(w_k|w_{k-n+1}^{k-1})
-\end{eqnarray}
+\begin{align}
+\textrm{bigrams:} & P(w_k|w_1^{k-1}) \approx P(w_k|w_{k-1}) \\
+\textrm{trigrams:} & P(w_k|w_1^{k-1}) \approx P(w_k|w_{k-1} w_{k-2}) \\
+\textrm{\emph{n}-grams:} & P(w_k|w_1^{k-1}) \approx  P(w_k|w_{k-n+1}^{k-1})
+\end{align}
 
 \noindent The probabilities used in computing $\Pr(w_{1}^{n})$ based
 on an \emph{n}-gram language model are generally estimated from a
@@ -1538,9 +1537,9 @@ means that the variable $a_i$ indicates the source word position of
 the $i^{\textrm{\emph{th}}}$ target word generated, and $|\textbf{a}|
 = |\textbf{e}|$.  Using these assumptions, the probability of an
 alignment and translation can be written as follows:
-\begin{eqnarray}
+\begin{align}
 \Pr(\textbf{e}, \textbf{a} | \textbf{f}) =  \underbrace{  \Pr(\textbf{a} | \textbf{f} , \textbf{e}) }_{\textrm{Alignment probability}} \times  \underbrace{ \prod_{i=1}^{|\textbf{e}|} \Pr(e_i|f_{a_i}) }_{\textrm{Lexical probability}}
-\end{eqnarray}
+\end{align}
 
 \noindent Since we have parallel corpora consisting of only $\langle
 \textbf{f}, \textbf{e} \rangle$ pairs, we can learn the parameters for
@@ -1551,9 +1550,9 @@ of an alignment depend only on the position of the previous aligned
 word we capture a valuable insight (namely, words that are nearby in
 the source language will tend to be nearby in the target language),
 and our model acquires the structure of an HMM \cite{Vogel_1996}:
-\begin{eqnarray}
-\Pr(\textbf{e}, \textbf{a} | \textbf{f}) & = & \underbrace{\prod_{i=1}^{|\textbf{e}|} \Pr(a_i | a_{i-1})}_{\textrm{Transition probability}} \times \underbrace{\prod_{i=1}^{|\textbf{e}|} \Pr(e_i|f_{a_i})}_{\textrm{Emission probability}} 
-\end{eqnarray}
+\begin{align}
+\Pr(\textbf{e}, \textbf{a} | \textbf{f}) = \underbrace{\prod_{i=1}^{|\textbf{e}|} \Pr(a_i | a_{i-1})}_{\textrm{Transition probability}} \times \underbrace{\prod_{i=1}^{|\textbf{e}|} \Pr(e_i|f_{a_i})}_{\textrm{Emission probability}} 
+\end{align}
 
 \noindent This model can be trained using the forward-backward
 algorithm described in the previous section, summing over all settings
@@ -1565,9 +1564,9 @@ simplify the alignment probability model, and use this simpler model
 to learn initial lexical translation (emission) parameters for the
 HMM.  The favored simplification is to assert that all alignments are
 uniformly probable:
-\begin{eqnarray}
-\Pr(\textbf{e}, \textbf{a} | \textbf{f}) & = & \frac{1}{|\textbf{f}|^{|\textbf{e}|}} \times \prod_{i=1}^{|\textbf{e}|} \Pr(e_i|f_{a_i}) 
-\end{eqnarray}
+\begin{align}
+\Pr(\textbf{e}, \textbf{a} | \textbf{f}) = \frac{1}{|\textbf{f}|^{|\textbf{e}|}} \times \prod_{i=1}^{|\textbf{e}|} \Pr(e_i|f_{a_i}) 
+\end{align}
 
 \noindent This model is known as IBM Model 1.  It is attractive for
 initialization because it is convex everywhere, and therefore EM will
@@ -1820,10 +1819,10 @@ the model is selected so as to minimize the negative conditional log
 likelihood of a set of training instances $\langle \langle \textbf{x}
 , \textbf{y} \rangle_1 , \langle \textbf{x} , \textbf{y} \rangle_2 ,
 \ldots \rangle$, which we assume to be i.i.d.:
-\begin{eqnarray}
-F(\theta) & = & \sum_{\langle \textbf{x} , \textbf{y} \rangle} - \log \Pr(\textbf{y} | \textbf{x} ; \theta) \label{chapter6_eq_meobj} \\
-\theta^* & = & \arg \min_\theta F(\theta)
-\end{eqnarray}
+\begin{align}
+F(\theta) & = \sum_{\langle \textbf{x} , \textbf{y} \rangle} - \log \Pr(\textbf{y} | \textbf{x} ; \theta) \label{chapter6_eq_meobj} \\
+\theta^* & = \arg \min_\theta F(\theta)
+\end{align}
 
 \noindent As Equation~\ref{chapter6_eq_meobj} makes clear, the
 objective decomposes linearly across training instances, meaning it

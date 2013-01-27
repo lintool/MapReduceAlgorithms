@@ -172,7 +172,7 @@ need to be shuffled from the mappers to the reducers.
 We illustrate various techniques for local aggregation using the
 simple word count example presented in
 Section~\ref{chapter2:mappers-and-reducers}.  For convenience,
-Figure~\ref{figure:chapter3:word-count:basic} repeats the pseudo-code
+Algorithm~\ref{algorithm:chapter3:word-count:basic} repeats the pseudo-code
 of the basic algorithm, which is quite simple:\ the mapper emits an
 intermediate key-value pair for each term observed, with the term
 itself as the key and a value of one; reducers sum up the partial
@@ -202,7 +202,11 @@ number of \emph{unique} terms in the collection.\footnote{More
   optimizations, so there is no guarantee that the execution framework
   will take advantage of all opportunities for partial aggregation.}
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+  \caption{Word count (repeated from Algorithm~\ref{algorithm:chapter2:word-count:basic})}
+\label{algorithm:chapter3:word-count:basic}
+The mapper emits an intermediate key-value pair for each word in a
+document. The reducer sums up all counts for each word.
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -226,15 +230,12 @@ number of \emph{unique} terms in the collection.\footnote{More
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for the basic word count algorithm in MapReduce
-    (repeated from Figure~\ref{chapter2:word-count:basic}).}
-\label{figure:chapter3:word-count:basic}
-\end{figure}
+\end{algorithm}
 
 An improvement on the basic algorithm is shown in
-Figure~\ref{figure:chapter3:word-count:inner-hash} (the mapper is
+Algorithm~\ref{algorithm:chapter3:word-count:inner-hash} (the mapper is
 modified but the reducer remains the same as in
-Figure~\ref{figure:chapter3:word-count:basic} and therefore is not
+Algorithm~\ref{algorithm:chapter3:word-count:basic} and therefore is not
 repeated).  An associative array (i.e., Map in Java) is introduced
 inside the mapper to tally up term counts within a single
 document:\ instead of emitting a key-value pair for each term in the
@@ -245,7 +246,9 @@ occurrences of the word ``dog''), this can yield substantial savings
 in the number of intermediate key-value pairs emitted, especially for
 long documents.
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+  \caption{Word count mapper using associative arrays}
+\label{algorithm:chapter3:word-count:inner-hash}
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -261,16 +264,11 @@ long documents.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for the improved MapReduce word count algorithm
-    that uses an associative array to aggregate term counts on a
-    per-document basis.  Reducer is the same as in
-    Figure~\ref{figure:chapter3:word-count:basic}.}
-\label{figure:chapter3:word-count:inner-hash}
-\end{figure}
+\end{algorithm}
 
 This basic idea can be taken one step further, as illustrated in the
 variant of the word count algorithm in
-Figure~\ref{figure:chapter3:word-count:outer-hash} (once again, only
+Algorithm~\ref{algorithm:chapter3:word-count:outer-hash} (once again, only
 the mapper is modified).  The workings of this algorithm critically
 depends on the details of how map and reduce tasks in Hadoop are
 executed, discussed in Section~\ref{chapter2:cluster-architecture}.
@@ -290,7 +288,9 @@ user-specified code \emph{after} the \textsc{Map} method has been
 applied to all input key-value pairs of the input data split to which
 the map task was assigned.
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+\caption{Word count mapper using the``in-mapper combining''}
+\label{algorithm:chapter3:word-count:outer-hash}
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -310,12 +310,7 @@ the map task was assigned.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for the improved MapReduce word count algorithm
-    that demonstrates the ``in-mapper combining'' design pattern.
-    Reducer is the same as in
-    Figure~\ref{figure:chapter3:word-count:basic}.}
-\label{figure:chapter3:word-count:outer-hash}
-\end{figure}
+\end{algorithm}
 
 With this technique, we are in essence incorporating combiner
 functionality directly inside the mapper.  There is no need to run a
@@ -347,7 +342,7 @@ overhead associated with actually materializing the key-value pairs.
 Combiners reduce the amount of intermediate data that is shuffled
 across the network, but don't actually reduce the number of key-value
 pairs that are emitted by the mappers in the first place.  With the
-algorithm in Figure~\ref{figure:chapter3:word-count:inner-hash},
+algorithm in Algorithm~\ref{algorithm:chapter3:word-count:inner-hash},
 intermediate key-value pairs are still generated on a per-document
 basis, only to be ``compacted'' by the combiners.  This process
 involves unnecessary object creation and destruction (garbage
@@ -384,7 +379,7 @@ that the vocabulary size never stops growing.\footnote{In more detail,
   collection.  Typical values of the parameters $k$ and $b$ are:\ $30
   \leq k \leq 100$ and $b \sim 0.5$~(\cite{Manning_etal_2008},
   p.\ 81).}  Therefore, the algorithm in
-Figure~\ref{figure:chapter3:word-count:outer-hash} will scale only up
+Algorithm~\ref{algorithm:chapter3:word-count:outer-hash} will scale only up
 to a point, beyond which the associative array holding the partial
 term counts will no longer fit in memory.\footnote{A few more
   details:\ note what matters is that the partial term counts
@@ -455,25 +450,9 @@ be used (unmodified) as the combiner (as is the case with the word
 count example).  In the general case, however, combiners and reducers
 are not interchangeable.
 
-Consider a simple example:\ we have a large dataset where input keys
-are strings and input values are integers, and we wish to compute the
-mean of all integers associated with the same key (rounded to the
-nearest integer).  A real-world example might be a large user log from
-a popular website, where keys represent user ids and values represent
-some measure of activity such as elapsed time for a particular
-session---the task would correspond to computing the mean session
-length on a per-user basis, which would be useful for understanding
-user demographics.  Figure~\ref{figure:chapter3:average} shows the
-pseudo-code of a simple algorithm for accomplishing this task that
-does not involve combiners.  We use an identity mapper, which simply
-passes all input key-value pairs to the reducers (appropriately
-grouped and sorted).  The reducer keeps track of the running sum and
-the number of integers encountered.  This information is used to
-compute the mean once all values are processed.  The mean is then
-emitted as the output value in the reducer (with the input string as
-the key).
-
-\begin{figure}[t]
+\begin{algorithm}[t]
+\caption{Compute the mean of values associated with the same key}
+\label{algorithm:chapter3:average}
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -498,24 +477,38 @@ the key).
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for the basic MapReduce algorithm that computes
-    the mean of values associated with the same key.}
-\label{figure:chapter3:average}
-\end{figure}
+\end{algorithm}
+
+Consider a simple example:\ we have a large dataset where input keys
+are strings and input values are integers, and we wish to compute the
+mean of all integers associated with the same key (rounded to the
+nearest integer).  A real-world example might be a large user log from
+a popular website, where keys represent user ids and values represent
+some measure of activity such as elapsed time for a particular
+session---the task would correspond to computing the mean session
+length on a per-user basis, which would be useful for understanding
+user demographics.  Algorithm~\ref{algorithm:chapter3:average} shows the
+pseudo-code of a simple algorithm for accomplishing this task that
+does not involve combiners.  We use an identity mapper, which simply
+passes all input key-value pairs to the reducers (appropriately
+grouped and sorted).  The reducer keeps track of the running sum and
+the number of integers encountered.  This information is used to
+compute the mean once all values are processed.  The mean is then
+emitted as the output value in the reducer (with the input string as
+the key).
 
 This algorithm will indeed work, but suffers from the same drawbacks
 as the basic word count algorithm in
-Figure~\ref{figure:chapter3:word-count:basic}:\ it requires shuffling
+Algorithm~\ref{algorithm:chapter3:word-count:basic}:\ it requires shuffling
 all key-value pairs from mappers to reducers across the network, which
 is highly inefficient.  Unlike in the word count example, the reducer
 cannot be used as a combiner in this case.  Consider what would happen
 if we did:\ the combiner would compute the mean of an arbitrary subset
 of values associated with the same key, and the reducer would compute
 the mean of those values.  As a concrete example, we know that:
-
-\begin{equation}
+\begin{align}
 \textsc{Mean}(1, 2, 3, 4, 5) \ne \textsc{Mean}( \textsc{Mean}(1, 2), \textsc{Mean}(3, 4, 5))
-\end{equation}
+\end{align}
 
 \noindent In general, the mean of means of arbitrary subsets of a set
 of numbers is not the same as the mean of the set of numbers.
@@ -527,7 +520,7 @@ result.\footnote{There is, however, one special case in which using
   impossible in MapReduce, such a scenario is highly unlikely.}
 
 So how might we properly take advantage of combiners?  An attempt is
-shown in Figure~\ref{figure:chapter3:average-fail}.  The mapper
+shown in Algorithm~\ref{algorithm:chapter3:average-fail}.  The mapper
 remains the same, but we have added a combiner that partially
 aggregates results by computing the numeric components necessary to
 arrive at the mean.  The combiner receives each string and the
@@ -545,7 +538,12 @@ key technique in MapReduce algorithm design that we introduced at the
 beginning of this chapter.  We will frequently encounter complex keys
 and values throughput the rest of this book.
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+\caption{Compute the mean of values associated with the same key}
+\label{algorithm:chapter3:average-fail}
+Note that this algorithm is incorrect. The mismatch between
+combiner input and output key-value types violates the MapReduce
+programming model.
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -584,12 +582,7 @@ and values throughput the rest of this book.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for an incorrect first attempt at introducing
-    combiners to compute the mean of values associated with each key.
-    The mismatch between combiner input and output key-value types
-    violates the MapReduce programming model.}
-\label{figure:chapter3:average-fail}
-\end{figure}
+\end{algorithm}
 
 Unfortunately, this algorithm will not work.  Recall that combiners
 must have the same input and output key-value type, which also must be
@@ -607,8 +600,8 @@ discussion that Hadoop makes no guarantees on how many times combiners
 are called; it could be zero, one, or multiple times.  This violates
 the MapReduce programming model.
 
-Another stab at the algorithm is shown in
-Figure~\ref{figure:chapter3:average-efficient}, and this time, the
+Another stab at the solution is shown in
+Algorithm~\ref{algorithm:chapter3:average-efficient}, and this time, the
 algorithm is correct.  In the mapper we emit as the value a pair
 consisting of the integer and one---this corresponds to a partial
 count over one instance.  The combiner separately aggregates the
@@ -619,7 +612,11 @@ algorithm transforms a non-associative operation (mean of numbers)
 into an associative operation (element-wise sum of a pair of numbers,
 with an additional division at the very end).
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+\caption{Compute the mean of values associated with the same key}
+\label{algorithm:chapter3:average-efficient}
+This algorithm correctly takes advantage of combiners.
+
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -658,11 +655,7 @@ with an additional division at the very end).
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for a MapReduce algorithm that computes the
-    mean of values associated with each key.  This algorithm correctly
-    takes advantage of combiners.}
-\label{figure:chapter3:average-efficient}
-\end{figure}
+\end{algorithm}
 
 Let us verify the correctness of this algorithm by repeating the
 previous exercise:\ What would happen if no combiners were run?  With
@@ -678,21 +671,27 @@ of the combiner must be the same as the input key-value type of the
 reducer, the reducer can emit final key-value pairs of a different
 type.
 
-Finally, in Figure~\ref{figure:chapter3:average-more-efficient}, we
+Finally, in Algorithm~\ref{algorithm:chapter3:average-more-efficient}, we
 present an even more efficient algorithm that exploits the in-mapper
 combining pattern.  Inside the mapper, the partial sums and counts
 associated with each string are held in memory across input key-value
 pairs.  Intermediate key-value pairs are emitted only after the entire
 input split has been processed; similar to before, the value is a pair
 consisting of the sum and count.  The reducer is exactly the same as
-in Figure~\ref{figure:chapter3:average-efficient}.  Moving partial
+in Algorithm~\ref{algorithm:chapter3:average-efficient}.  Moving partial
 aggregation from the combiner directly into the mapper is subjected to
 all the tradeoffs and caveats discussed earlier this section, but in
 this case the memory footprint of the data structures for holding
 intermediate data is likely to be modest, making this variant
 algorithm an attractive option.
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+\caption{Compute the mean of values associated with the same key}
+\label{algorithm:chapter3:average-more-efficient}
+This mapper illustrates the in-mapper combining design pattern. The
+reducer is the same as in
+Algorithm~\ref{algorithm:chapter3:average-efficient}
+
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -712,13 +711,7 @@ algorithm an attractive option.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for a MapReduce algorithm that computes the
-    mean of values associated with each key, illustrating the
-    in-mapper combining design pattern.  Only the mapper is shown
-    here; the reducer is the same as in
-    Figure~\ref{figure:chapter3:average-efficient}}
-\label{figure:chapter3:average-more-efficient}
-\end{figure}
+\end{algorithm}
 
 \section{Pairs and Stripes}
 \label{chapter3:pairs-and-stripes}
@@ -800,7 +793,7 @@ inherent scalability limitations.  We describe two MapReduce
 algorithms for this task that can scale to large corpora.
 
 Pseudo-code for the first algorithm, dubbed the ``pairs'' approach, is
-shown in Figure~\ref{figure:chapter3:coocur:pairs}.  As usual,
+shown in Algorithm~\ref{algorithm:chapter3:coocur:pairs}.  As usual,
 document ids and the corresponding contents make up the input
 key-value pairs.  The mapper processes each input document and emits
 intermediate key-value pairs with each co-occurring word pair as the
@@ -819,7 +812,10 @@ as the final key-value pair. Each pair corresponds to a cell in the
 word co-occurrence matrix.  This algorithm illustrates the use of
 complex keys in order to coordinate distributed computations.
 
-\begin{figure}[p]
+\begin{algorithm}[p]
+\caption{Compute word co-occurrence (``pairs'' approach)}
+\label{algorithm:chapter3:coocur:pairs}
+
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -845,12 +841,12 @@ complex keys in order to coordinate distributed computations.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for the ``pairs'' approach for computing word
-    co-occurrence matrices from large corpora.}
-\label{figure:chapter3:coocur:pairs}
-\end{figure}
+\end{algorithm}
 
-\begin{figure}[p]
+\begin{algorithm}[p]
+\caption{Compute word co-occurrence (``stripes'' approach)}
+\label{algorithm:chapter3:coocur:stripes}
+
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -878,13 +874,12 @@ complex keys in order to coordinate distributed computations.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for the ``stripes'' approach for computing word
-    co-occurrence matrices from large corpora.}
-\label{figure:chapter3:coocur:stripes}
-\end{figure}
+\end{algorithm}
+
+\afterpage{\clearpage}
 
 An alternative approach, dubbed the ``stripes'' approach, is presented
-in Figure~\ref{figure:chapter3:coocur:stripes}.  Like the pairs
+in Algorithm~\ref{algorithm:chapter3:coocur:stripes}.  Like the pairs
 approach, co-occurring word pairs are generated by two nested loops.
 However, the major difference is that instead of emitting intermediate
 key-value pairs for each co-occurring word pair, co-occurrence
@@ -1077,10 +1072,9 @@ A simple remedy is to convert absolute counts into relative
 frequencies, $f(w_j|w_i)$.  That is, what proportion of the time does
 $w_j$ appear in the context of $w_i$?  This can be computed using the
 following equation:
-
-\begin{equation}
+\begin{align}
 f(w_j|w_i) = \frac{N(w_i,w_j)}{\sum_{w'}{N(w_i,w')}}
-\end{equation}
+\end{align}
 
 \noindent Here, $N(\cdot, \cdot)$ indicates the number of times a
 particular co-occurring word pair is observed in the corpus.  We need
@@ -1096,7 +1090,7 @@ those counts to arrive at the marginal (i.e., $\sum_{w'}{N(w_i,w')}$),
 and then divide all the joint counts by the marginal to arrive at the
 relative frequency for all words.  This implementation requires
 minimal modification to the original stripes algorithm in
-Figure~\ref{figure:chapter3:coocur:stripes}, and illustrates the use
+Algorithm~\ref{algorithm:chapter3:coocur:stripes}, and illustrates the use
 of complex data structures to coordinate distributed computations in
 MapReduce.  Through appropriate structuring of keys and values, one
 can use the MapReduce execution framework to bring together all the
@@ -1175,12 +1169,14 @@ the reducer can directly compute the relative frequencies.
 \begin{figure}[t]
 \begin{tabular}{lll}
 \textbf{key} & \textbf{values} &  \\
-$(\textrm{dog}, \ast)$        & $[$6327, 8514, $\ldots$$]$ & compute marginal: $\sum_{w'}{N(\textrm{dog},w')} = 42908$\\
+$(\textrm{dog}, \ast)$        & $[$6327, 8514, $\ldots$$]$ & compute marginal: \\
+ & & $\sum_{w'}{N(\textrm{dog},w')} = 42908$\\
 $(\textrm{dog}, \textrm{aardvark})$ & $[$2,1$]$    & $f(\textrm{aardvark}|\textrm{dog}) = 3/42908$ \\
 $(\textrm{dog}, \textrm{aardwolf})$ & $[$1$]$      & $f(\textrm{aardwolf}|\textrm{dog}) = 1/42908$ \\
 \ldots            &      & \\
 $(\textrm{dog}, \textrm{zebra})$    & $[$2,1,1,1$]$    & $f(\textrm{zebra}|\textrm{dog}) = 5/42908$ \\
-$(\textrm{doge}, \ast)$       & $[$682, $\ldots$$]$  & compute marginal: $\sum_{w'}{N(\textrm{doge},w')} = 1267$\\
+$(\textrm{doge}, \ast)$       & $[$682, $\ldots$$]$  & compute marginal: \\
+&& $\sum_{w'}{N(\textrm{doge},w')} = 1267$\\
 \ldots            &      & \\
 \end{tabular}
 \caption{Example of the sequence of key-value pairs presented to the
