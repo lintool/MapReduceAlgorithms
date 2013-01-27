@@ -214,7 +214,7 @@ this famous algorithm assumes sequential processing---how would we
 solve this problem in parallel, and more specifically, with MapReduce?
 
 As a refresher and also to serve as a point of comparison, Dijkstra's
-algorithm is shown in Figure~\ref{figure:chapter-graphs:Dijkstra},
+algorithm is shown in Algorithm~\ref{algorithm:chapter-graphs:Dijkstra},
 adapted from Cormen, Leiserson, and Rivest's classic algorithms
 textbook~\cite{CLR} (often simply known as \emph{CLR}).  The input to
 the algorithm is a directed, connected graph $G=(V,E)$ represented
@@ -225,8 +225,15 @@ for the source node, whose distance to itself is zero.  The algorithm
 maintains $Q$, a global priority queue of vertices with priorities equal to
 their distance values $d$.
 
-\begin{figure}[t]
-\algrenewcommand\algorithmicfunction{}
+\begin{algorithm}[t]
+\caption{Dijkstra's algorithm}
+\label{algorithm:chapter-graphs:Dijkstra}
+Dijkstra's algorithm is based on maintaining a global priority queue
+of nodes with priorities equal to their distances from the source
+node.  At each iteration, the algorithm expands the node with the
+shortest distance and updates distances to all reachable nodes.
+
+  \algrenewcommand\algorithmicfunction{}
   \begin{algorithmic}[1]
     \Function{Dijkstra}{$G, w, s$}
     \State $d[s] \gets 0$
@@ -244,13 +251,7 @@ their distance values $d$.
     \EndWhile
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for Dijkstra's algorithm, which is based on
-    maintaining a global priority queue of nodes with priorities equal to
-    their distances from the source node.  At each iteration, the
-    algorithm expands the node with the shortest distance and updates
-    distances to all reachable nodes.}
-\label{figure:chapter-graphs:Dijkstra}
-\end{figure}
+\end{algorithm}
 
 Dijkstra's algorithm operates by iteratively selecting the node with
 the lowest current distance from the priority queue (initially, this
@@ -260,7 +261,7 @@ if any of those nodes can be reached with a path of a shorter
 distance.  The algorithm terminates when the priority queue $Q$ is
 empty, or equivalently, when all nodes have been considered.  Note
 that the algorithm as presented in
-Figure~\ref{figure:chapter-graphs:Dijkstra} only computes the shortest
+Algorithm~\ref{algorithm:chapter-graphs:Dijkstra} only computes the shortest
 distances.  The actual paths can be recovered by storing
 ``backpointers'' for every node indicating a fragment of the shortest
 path.
@@ -317,7 +318,7 @@ The shortest distance to $n$ is the distance to $m_s$ plus one.
 
 Pseudo-code for the implementation of the parallel breadth-first
 search algorithm is provided in
-Figure~\ref{figure:chapter-graphs:BFS}.  As with Dijkstra's algorithm,
+Algorithm~\ref{algorithm:chapter-graphs:BFS}.  As with Dijkstra's algorithm,
 we assume a connected, directed graph represented as adjacency lists.
 Distance to each node is directly stored alongside the adjacency list
 of that node, and initialized to $\infty$ for all nodes except for the
@@ -335,7 +336,14 @@ to all paths leading to that node.  The reducer will select the
 shortest of these distances and then update the distance in the node
 data structure.
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+\caption{Parallel breath-first search}
+\label{algorithm:chapter-graphs:BFS}
+The mappers emit distances to reachable nodes, while the reducers
+select the minimum of those distances for each destination node.  Each
+iteration (one MapReduce job) of the algorithm expands the ``search
+frontier'' by one hop.
+
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -367,13 +375,7 @@ data structure.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for parallel breath-first search in
-    MapReduce:\ the mappers emit distances to reachable nodes, while
-    the reducers select the minimum of those distances for each
-    destination node.  Each iteration (one MapReduce job) of the
-    algorithm expands the ``search frontier'' by one hop.}
-\label{figure:chapter-graphs:BFS}
-\end{figure}
+\end{algorithm}
 
 It is apparent that parallel breadth-first search is an iterative
 algorithm, where each iteration corresponds to a MapReduce job.  The
@@ -387,9 +389,9 @@ algorithm, there is one more detail required to make the parallel
 breadth-first search algorithm work.  We need to ``pass along'' the
 graph structure from one iteration to the next.  This is accomplished
 by emitting the node data structure itself, with the node id as a key
-(Figure~\ref{figure:chapter-graphs:BFS}, line 4 in the mapper).  In the
+(Algorithm~\ref{algorithm:chapter-graphs:BFS}, line 4 in the mapper).  In the
 reducer, we must distinguish the node data structure from distance
-values (Figure~\ref{figure:chapter-graphs:BFS}, lines 5--6 in the reducer),
+values (Algorithm~\ref{algorithm:chapter-graphs:BFS}, lines 5--6 in the reducer),
 and update the minimum distance in the node data structure before
 emitting it as the final value.  The final output is now ready to
 serve as input to the next iteration.\footnote{Note that in this
@@ -459,7 +461,7 @@ Let us relax that restriction and see what changes are required in the
 parallel breadth-first search algorithm.  The adjacency lists, which
 were previously lists of node ids, must now encode the edge distances
 as well.  In line 6 of the mapper code in
-Figure~\ref{figure:chapter-graphs:BFS}, instead of emitting $d+1$ as
+Algorithm~\ref{algorithm:chapter-graphs:BFS}, instead of emitting $d+1$ as
 the value, we must now emit $d+w$ where $w$ is the edge distance.  No
 other changes to the algorithm are required, but the termination
 behavior is very different.  To illustrate, consider the graph
@@ -711,7 +713,7 @@ is preserved by the algorithm, guaranteeing that we continue to have a
 valid probability distribution at the end of each iteration.
 
 Pseudo-code of the MapReduce PageRank algorithm is shown in
-Figure~\ref{figure:chapter-graphs:PageRank}; it is simplified in that we
+Algorithm~\ref{algorithm:chapter-graphs:PageRank}; it is simplified in that we
 continue to ignore the random jump factor and assume no dangling nodes
 (complications that we will return to later).  An illustration of the
 running algorithm is shown in
@@ -724,7 +726,15 @@ Each piece of the PageRank mass is emitted as the value, keyed by the node
 ids of the neighbors.  Conceptually, we can think of this as passing
 PageRank mass along outgoing edges.
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+ \caption{PageRank (simplified)}
+\label{algorithm:chapter-graphs:PageRank}
+In the map phase we evenly divide up each node's PageRank mass and
+pass each piece along outgoing edges to neighbors.  In the reduce
+phase PageRank contributions are summed up at each destination node.
+Each MapReduce job corresponds to one iteration of the algorithm. This
+algorithm does not handle dangling nodes and the random jump factor.
+
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -755,14 +765,7 @@ PageRank mass along outgoing edges.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code for PageRank in MapReduce (leaving aside
-    dangling nodes and the random jump factor).  In the map phase we
-    evenly divide up each node's PageRank mass and pass each piece
-    along outgoing edges to neighbors.  In the reduce phase PageRank
-    contributions are summed up at each destination node.  Each
-    MapReduce job corresponds to one iteration of the algorithm.}
-\label{figure:chapter-graphs:PageRank}
-\end{figure}
+\end{algorithm}
 
 \begin{figure}[t]
 \begin{center}
@@ -800,7 +803,7 @@ are nodes in the graph that have no outgoing edges, i.e., their
 adjacency lists are empty.  In the hyperlink graph of the web, these
 might correspond to pages in a crawl that have not been downloaded
 yet.  If we simply run the algorithm in
-Figure~\ref{figure:chapter-graphs:PageRank} on graphs with dangling nodes,
+Algorithm~\ref{algorithm:chapter-graphs:PageRank} on graphs with dangling nodes,
 the total PageRank mass will not be conserved, since no key-value
 pairs will be emitted when a dangling node is encountered in the
 mappers.
@@ -809,7 +812,7 @@ The proper treatment of PageRank mass ``lost'' at the dangling nodes
 is to redistribute it across all nodes in the graph evenly
 (cf.~\cite{Bianchini_etal_2005}).  There are many ways to determine
 the missing PageRank mass.  One simple approach is by instrumenting
-the algorithm in Figure~\ref{figure:chapter-graphs:PageRank} with
+the algorithm in Algorithm~\ref{algorithm:chapter-graphs:PageRank} with
 counters:\ whenever the mapper processes a node with an empty
 adjacency list, it keeps track of the node's PageRank value in the
 counter.  At the end of the iteration, we can access the counter to

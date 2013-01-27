@@ -206,9 +206,7 @@ the index as well.
 
 \begin{figure}[t]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.75]{figures/fig-ch4-indexing-inverted-index.pdf}
-\vspace{-0.3cm}
 \end{center}
 \caption{Simple illustration of an inverted index.  Each term is
   associated with a list of postings.  Each posting is comprised of a
@@ -219,10 +217,14 @@ the index as well.
 \end{figure}
 
 In the example shown in Figure~\ref{chapter-indexing:inverted-index},
-we see that \emph{term}$_1$ occurs in $\{d_1, d_5, d_6, d_{11},
-\ldots\}$, \emph{term}$_2$ occurs in $\{d_{11}, d_{23}, d_{59}, d_{84},
-\ldots\}$, and \emph{term}$_3$ occurs in $\{d_1, d_4, d_{11}, d_{19},
-\ldots\}$.  In an actual implementation, we assume that documents can
+we see that:
+\begin{quote}
+\emph{term}$_1$ occurs in $\{d_1, d_5, d_6, d_{11}, \ldots\}$, \\
+\emph{term}$_2$ occurs in $\{d_{11}, d_{23}, d_{59}, d_{84}, \ldots\}$, and \\
+\emph{term}$_3$ occurs in $\{d_1, d_4, d_{11}, d_{19}, \ldots\}$.
+\end{quote}
+
+In an actual implementation, we assume that documents can
 be identified by a unique integer ranging from 1 to \emph{n}, where
 \emph{n} is the total number of documents.\footnote{It is preferable to
   start numbering the documents at one since it is not possible to
@@ -280,7 +282,12 @@ additional readings.
 \section{Inverted Indexing: Baseline Implementation}
 \label{chapter-indexing:index:baseline}
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+\caption{Baseline inverted indexing algorithm}
+\label{algorithm:chapter-indexing:indexing:basic}
+Mappers emit postings keyed by terms, the execution framework groups
+postings by term, and the reducers write postings lists to disk.
+
 \algrenewcommand\algorithmicfunction{\textbf{class}}
   \begin{algorithmic}[1]
     \Function{Mapper}{}
@@ -308,17 +315,12 @@ additional readings.
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code of the baseline inverted indexing algorithm in
-    MapReduce.  Mappers emit postings keyed by terms, the execution
-    framework groups postings by term, and the reducers write postings
-    lists to disk.}
-\label{chapter-indexing:indexing:basic}
-\end{figure}
+\end{algorithm}
 
 MapReduce was designed from the very beginning to produce the various
 data structures involved in web search, including inverted indexes and
 the web graph.  We begin with the basic inverted indexing algorithm 
-shown in Figure~\ref{chapter-indexing:indexing:basic}.
+shown in Algorithm~\ref{algorithm:chapter-indexing:indexing:basic}.
 
 Input to the mapper consists of document ids (keys) paired with the
 actual content (values).  Individual documents are processed in
@@ -368,9 +370,7 @@ the correct byte offset position in that file.
 
 \begin{figure}[t]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.6]{figures/fig-ch4-indexing-MR-baseline.pdf}
-\vspace{-0.3cm}
 \end{center}
 \caption{Simple illustration of the baseline inverted indexing
   algorithm in MapReduce with three mappers and two reducers.
@@ -411,7 +411,7 @@ sufficient memory to hold all postings associated with the same term.
 Since the basic MapReduce execution framework makes no guarantees
 about the ordering of values associated with the same key, the reducer
 first buffers all postings (line 5 of the reducer pseudo-code in
-Figure~\ref{chapter-indexing:indexing:basic}) and then performs an
+Algorithm~\ref{algorithm:chapter-indexing:indexing:basic}) and then performs an
 in-memory sort before writing the postings to disk.\footnote{See
   similar discussion in Section~\ref{chapter3:secondary-sorting}:\ in
   principle, this need not be an in-memory sort.  It is entirely
@@ -448,7 +448,7 @@ partitioner to ensure that all tuples with the same term are shuffled
 to the same reducer.
 
 The revised MapReduce inverted indexing algorithm is shown in
-Figure~\ref{chapter-indexing:scalable}.  The mapper remains unchanged
+Algorithm~\ref{algorithm:chapter-indexing:scalable}.  The mapper remains unchanged
 for the most part, other than differences in the intermediate
 key-value pairs.  The \textsc{Reduce} method is called for each key
 (i.e., $\langle t, n \rangle$), and by design, there will only be one
@@ -464,7 +464,13 @@ be easily changed:\ by simply replacing the intermediate value $f$
 (term frequency) with whatever else is desired (e.g., term positional
 information).
 
-\begin{figure}[t]
+\begin{algorithm}[t]
+\caption{Scalable inverted indexing}
+\label{algorithm:chapter-indexing:scalable}
+By applying the value-to-key conversion design pattern, the execution
+framework is exploited to sort postings so that they arrive sorted by
+document id in the reducer.
+
 \algrenewcommand\algorithmicfunction{\textbf{class}}
 \algrenewcommand\algorithmicprocedure{\textbf{method}}
   \begin{algorithmic}[1]
@@ -500,12 +506,7 @@ information).
     \EndProcedure
     \EndFunction
   \end{algorithmic}
-  \caption{Pseudo-code of a scalable inverted indexing algorithm in
-    MapReduce.  By applying the value-to-key conversion design
-    pattern, the execution framework is exploited to sort postings so
-    that they arrive sorted by document id in the reducer.}
-\label{chapter-indexing:scalable}
-\end{figure}
+\end{algorithm}
 
 There is one more detail we must address when building inverted
 indexes.  Since almost all retrieval models take into account document
@@ -838,7 +839,7 @@ between term positions using $\gamma$ codes.
 
 Having completed our slight detour into integer compression
 techniques, we can now return to the scalable inverted indexing
-algorithm shown in Figure~\ref{chapter-indexing:scalable} and discuss
+algorithm shown in Algorithm~\ref{algorithm:chapter-indexing:scalable} and discuss
 how postings lists can be properly compressed.  As we can see from the
 previous section, there is a wide range of choices that represent
 different tradeoffs between compression ratio and decoding speed.
@@ -974,9 +975,7 @@ Figure~\ref{chapter-indexing:partition}.
 
 \begin{figure}[t]
 \begin{center}
-\vspace{0.2cm}
 \includegraphics[scale=0.75]{figures/fig-ch4-indexing-partition.pdf}
-\vspace{-0.3cm}
 \end{center}
 \caption{Term--document matrix for a toy collection (nine documents,
   nine terms) illustrating different partitioning
