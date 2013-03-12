@@ -215,8 +215,8 @@ solve this problem in parallel, and more specifically, with MapReduce?
 
 As a refresher and also to serve as a point of comparison, Dijkstra's
 algorithm is shown in Algorithm~\ref{algorithm:chapter-graphs:Dijkstra},
-adapted from Cormen, Leiserson, and Rivest's classic algorithms
-textbook~\cite{CLR} (often simply known as \emph{CLR}).  The input to
+adapted from Cormen, Leiserson, Rivest, and Stein's classic algorithms
+textbook~\cite{CLRS} (often simply known as \emph{CLRS}).  The input to
 the algorithm is a directed, connected graph $G=(V,E)$ represented
 with adjacency lists, $w$ containing edge distances such that $w(u,v)
 \geq 0$, and the source node $s$.  The algorithm begins by first
@@ -281,7 +281,7 @@ path.
 
 A sample trace of the algorithm running on a simple graph is shown in
 Figure~\ref{figure:chapter-graphs:Dijkstra-example} (example also adapted
-from \emph{CLR}).  We start out in (a) with $n_1$ having a
+from \emph{CLRS}).  We start out in (a) with $n_1$ having a
 distance of zero (since it's the source) and all other nodes having a
 distance of $\infty$.  In the first iteration (a), $n_1$ is selected
 as the node to expand (indicated by the thicker border).  After the
