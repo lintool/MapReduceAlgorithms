@@ -1,6 +1,12 @@
 \chapter{MapReduce Basics}
 \label{chapter2}
 
+\thispagestyle{empty}
+
+\noindent This is a post-production manuscript of:\ Jimmy Lin and
+Chris Dyer. Data-Intensive Text Processing with MapReduce. Morgan \&
+Claypool Publishers, 2010. This version was compiled on \today.\\
+
 The only feasible approach to tackling large-data problems today is to
 divide and conquer, a fundamental concept in computer science that is
 introduced very early in typical undergraduate curricula.  The basic
@@ -264,7 +270,7 @@ $r$ files often serve as input to yet another MapReduce job.
 Figure~\ref{figure:chapter2:MapReduce-simple} illustrates this
 two-stage processing structure.
 
-\begin{figure}[p]
+\begin{figure}
 \begin{center}
 \includegraphics[scale=0.6]{figures/fig-ch2-MapReduce-simple.pdf}
 \end{center}
@@ -276,34 +282,31 @@ two-stage processing structure.
 \label{figure:chapter2:MapReduce-simple}
 \end{figure}
 
-\begin{algorithm}[p]
+
+\begin{algorithm}[t]
 \caption{Word count}
 \label{algorithm:chapter2:word-count:basic}
 The mapper emits an intermediate key-value pair for each word in a
 document. The reducer sums up all counts for each word.
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Map}{$\textrm{docid }a, \textrm{doc }d$}
-    \ForAll{$\textrm{term }t \in \textrm{doc }d$}
-    \State $\textsc{Emit}(\textrm{term }t, \textrm{count }1)$
-    \EndFor
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (word <- tokenize(value)) {
+      emit(word, 1)
+  }
+}
 
-  \begin{algorithmic}[1]
-    \Function{Reducer}{}
-    \Procedure{Reduce}{$\textrm{term }t, \textrm{counts }[  c_1, c_2, \ldots ]$}
-    \State $sum \gets 0$
-    \ForAll{$ \textrm{count }c \in \textrm{counts }[  c_1, c_2, \ldots ]$}
-    \State $sum \gets sum + c$
-    \EndFor
-    \State $\textsc{Emit}(\textrm{term }t, \textrm{count }sum)$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Reducer {
+  def reduce(key: Text, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+    }
+    emit(key, sum)
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 A simple word count algorithm in MapReduce is shown in

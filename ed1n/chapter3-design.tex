@@ -1,7 +1,13 @@
 \chapter{Basic MapReduce Algorithm Design}
 \label{chapter3}
 
-A large part of the power of MapReduce comes from its simplicity:\ in
+\thispagestyle{empty}
+
+\noindent This is a post-production manuscript of:\ Jimmy Lin and
+Chris Dyer. Data-Intensive Text Processing with MapReduce. Morgan \&
+Claypool Publishers, 2010. This version was compiled on \today.\\
+
+\noindent A large part of the power of MapReduce comes from its simplicity:\ in
 addition to preparing the input data, the programmer needs only to
 implement the mapper, the reducer, and optionally, the combiner and
 the partitioner.  All other aspects of execution are handled
@@ -203,33 +209,29 @@ number of \emph{unique} terms in the collection.\footnote{More
   will take advantage of all opportunities for partial aggregation.}
 
 \begin{algorithm}[t]
-  \caption{Word count (repeated from Algorithm~\ref{algorithm:chapter2:word-count:basic})}
+\caption{Word count (repeated from Algorithm~\ref{algorithm:chapter2:word-count:basic})}
 \label{algorithm:chapter3:word-count:basic}
 The mapper emits an intermediate key-value pair for each word in a
 document. The reducer sums up all counts for each word.
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Map}{$\textrm{docid }a, \textrm{doc }d$}
-    \ForAll{$\textrm{term }t \in \textrm{doc }d$}
-    \State $\textsc{Emit}(\textrm{term }t, \textrm{count }1)$
-    \EndFor
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (word <- tokenize(value)) {
+      emit(word, 1)
+  }
+}
 
-  \begin{algorithmic}[1]
-    \Function{Reducer}{}
-    \Procedure{Reduce}{$\textrm{term }t, \textrm{counts }[  c_1, c_2, \ldots ]$}
-    \State $sum \gets 0$
-    \ForAll{$ \textrm{count }c \in \textrm{counts }[  c_1, c_2, \ldots ]$}
-    \State $sum \gets sum + c$
-    \EndFor
-    \State $\textsc{Emit}(\textrm{term }t, \textrm{count }sum)$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Reducer {
+  def reduce(key: Text, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+    }
+    emit(key, sum)
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 An improvement on the basic algorithm is shown in
@@ -247,23 +249,25 @@ in the number of intermediate key-value pairs emitted, especially for
 long documents.
 
 \begin{algorithm}[t]
-  \caption{Word count mapper using associative arrays}
+\caption{Word count mapper using associative arrays}
 \label{algorithm:chapter3:word-count:inner-hash}
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Map}{$\textrm{docid }a, \textrm{doc }d$}
-    \State $H \gets \textrm{new }\textsc{AssociativeArray}$
-    \ForAll{$\textrm{term }t \in \textrm{doc }d$}
-      \State $H\{t\} \gets H\{t\} + 1$\Comment{Tally counts for entire document}
-    \EndFor
-    \ForAll{$\textrm{term }t \in H$}
-    \State $\textsc{Emit}(\textrm{term }t, \textrm{count }H\{t\} )$
-    \EndFor
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+The mapper builds a histogram of all words in each input record before
+emitting key-value pairs corresponding to unique words observed.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    val counts = new Map()
+    for (word <- tokenize(value)) {
+      counts(word) += 1
+    }
+    for ((k, v) <- counts) {
+      emit(k, v)
+    }
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 This basic idea can be taken one step further, as illustrated in the
@@ -291,25 +295,27 @@ the map task was assigned.
 \begin{algorithm}[t]
 \caption{Word count mapper using the``in-mapper combining''}
 \label{algorithm:chapter3:word-count:outer-hash}
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Initialize}{}
-    \State $H \gets \textrm{new }\textsc{AssociativeArray}$
-    \EndProcedure
-    \Procedure{Map}{$\textrm{docid }a, \textrm{doc }d$}
-    \ForAll{$\textrm{term }t \in \textrm{doc }d$}
-    \State $H\{t\} \gets H\{t\} + 1$\Comment{Tally counts \emph{across} documents}
-    \EndFor
-    \EndProcedure
-    \Procedure{Close}{}
-    \ForAll{$\textrm{term }t \in H$}
-    \State $\textsc{Emit}(\textrm{term }t, \textrm{count }H\{t\} )$
-    \EndFor
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+The mapper builds a histogram of all input records processed before
+emitting key-value pairs corresponding to unique words observed.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  val counts = new Map()
+
+  def map(key: Long, value: Text) = {
+    for (word <- tokenize(value)) {
+      counts(word) += 1
+    }
+  }
+
+  def cleanup() = {
+    for ((k, v) <- counts) {
+      emit(k, v)
+    }
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 With this technique, we are in essence incorporating combiner
@@ -453,30 +459,26 @@ are not interchangeable.
 \begin{algorithm}[t]
 \caption{Compute the mean of values associated with the same key}
 \label{algorithm:chapter3:average}
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Map}{$\textrm{string }t, \textrm{integer }r$}
-    \State $\textsc{Emit}(\textrm{string }t, \textrm{integer }r)$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+Mapper is the identify function; the mean is computed in the reducer.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Text, value: Int) = {
+    emit(key, value)
+  }
+}
 
-  \begin{algorithmic}[1]
-    \Function{Reducer}{}
-    \Procedure{Reduce}{$\textrm{string }t, \textrm{integers }[ r_1, r_2, \ldots ]$}
-    \State $sum \gets 0$
-    \State $cnt \gets 0$
-    \ForAll{$ \textrm{integer }r \in \textrm{integers }[ r_1, r_2, \ldots ]$}
-    \State $sum \gets sum + r$
-    \State $cnt \gets cnt + 1$
-    \EndFor
-    \State $r_{avg} \gets sum/cnt$
-    \State $\textsc{Emit}(\textrm{string }t, \textrm{integer } r_{avg})$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Reducer {
+  def reduce(key: Text, values: Iterable[Int]) {
+    for (value <- values) {
+      sum += value
+      cnt += 1
+    }
+    emit(key, sum/cnt)
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 Consider a simple example:\ we have a large dataset where input keys
@@ -544,44 +546,34 @@ and values throughput the rest of this book.
 Note that this algorithm is incorrect. The mismatch between
 combiner input and output key-value types violates the MapReduce
 programming model.
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Map}{$\textrm{string }t, \textrm{integer }r$}
-    \State $\textsc{Emit}(\textrm{string }t, \textrm{integer }r)$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Text, value: Int) =
+    emit(key, value)
+}
 
-  \begin{algorithmic}[1]
-    \Function{Combiner}{}
-    \Procedure{Combine}{$\textrm{string }t, \textrm{integers }[ r_1, r_2, \ldots ]$}
-    \State $sum \gets 0$
-    \State $cnt \gets 0$
-    \ForAll{$ \textrm{integer }r \in \textrm{integers }[ r_1, r_2, \ldots ]$}
-    \State $sum \gets sum + r$
-    \State $cnt \gets cnt + 1$
-    \EndFor
-    \State $\textsc{Emit}(\textrm{string }t, \textrm{pair } (sum, cnt))$\Comment{Separate sum and count}
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Combiner {
+  def reduce(key: Text, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+      cnt += 1
+    }
+    emit(key, (sum, cnt))
+  }
+}
 
-  \begin{algorithmic}[1]
-    \Function{Reducer}{}
-    \Procedure{Reduce}{$\textrm{string }t, \textrm{pairs }[ (s_1, c_1), (s_2, c_2) \ldots ]$}
-    \State $sum \gets 0$
-    \State $cnt \gets 0$
-    \ForAll{$ \textrm{pair }(s, c) \in \textrm{pairs }[ (s_1, c_1), (s_2, c_2) \ldots ]$}
-    \State $sum \gets sum + s$
-    \State $cnt \gets cnt + c$
-    \EndFor
-    \State $r_{avg} \gets sum/cnt$
-    \State $\textsc{Emit}(\textrm{string }t, \textrm{integer } r_{avg})$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Reducer {
+  def reduce(key: Text, values: Iterable[Pair]) = {
+    for (value <- values) {
+      sum += value.left
+      cnt += value.right
+    }
+    emit(key, sum/cnt)
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 Unfortunately, this algorithm will not work.  Recall that combiners
@@ -615,46 +607,36 @@ with an additional division at the very end).
 \begin{algorithm}[t]
 \caption{Compute the mean of values associated with the same key}
 \label{algorithm:chapter3:average-efficient}
-This algorithm correctly takes advantage of combiners.
+This algorithm correctly takes advantage of combiners by storing the
+sum and count separately as a pair.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Text, value: Int) =
+    emit(key, (value, 1))
+}
 
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Map}{$\textrm{string }t, \textrm{integer }r$}
-    \State $\textsc{Emit}(\textrm{string }t, \textrm{pair }(r, 1))$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Combiner {
+  def reduce(key: Text, values: Iterable[Pair]) = {
+    for (value <- values) {
+      sum += value.left
+      cnt += value.right
+    }
+    emit(key, (sum, cnt))
+  }
+}
 
-  \begin{algorithmic}[1]
-    \Function{Combiner}{}
-    \Procedure{Combine}{$\textrm{string }t, \textrm{pairs }[ (s_1, c_1), (s_2, c_2) \ldots ]$}
-    \State $sum \gets 0$
-    \State $cnt \gets 0$
-    \ForAll{$ \textrm{pair }(s, c) \in \textrm{pairs }[ (s_1, c_1), (s_2, c_2) \ldots ]$}
-    \State $sum \gets sum + s$
-    \State $cnt \gets cnt + c$
-    \EndFor
-    \State $\textsc{Emit}(\textrm{string }t, \textrm{pair }(sum, cnt))$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
-
-  \begin{algorithmic}[1]
-    \Function{Reducer}{}
-    \Procedure{Reduce}{$\textrm{string }t, \textrm{pairs }[ (s_1, c_1), (s_2, c_2) \ldots ]$}
-    \State $sum \gets 0$
-    \State $cnt \gets 0$
-    \ForAll{$ \textrm{pair }(s, c) \in \textrm{pairs }[ (s_1, c_1), (s_2, c_2) \ldots ]$}
-    \State $sum \gets sum + s$
-    \State $cnt \gets cnt + c$
-    \EndFor
-    \State $r_{avg} \gets sum/cnt$
-    \State $\textsc{Emit}(\textrm{string }t, \textrm{integer } r_{avg})$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Reducer {
+  def reduce(key: Text, values: Iterable[Pair]) = {
+    for (value <- values) {
+      sum += value.left
+      cnt += value.right
+    }
+    emit(key, sum/cnt)
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 Let us verify the correctness of this algorithm by repeating the
@@ -691,26 +673,25 @@ algorithm an attractive option.
 This mapper illustrates the in-mapper combining design pattern. The
 reducer is the same as in
 Algorithm~\ref{algorithm:chapter3:average-efficient}
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper  {
+  val sums = new Map()
+  val counts = new Map()
 
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Initialize}{}
-      \State $S \gets \textrm{new }\textsc{AssociativeArray}$
-      \State $C \gets \textrm{new }\textsc{AssociativeArray}$
-    \EndProcedure
-    \Procedure{Map}{$\textrm{string }t, \textrm{integer }r$}
-      \State $S\{t\} \gets S\{t\} + r$
-      \State $C\{t\} \gets C\{t\} + 1$
-    \EndProcedure
-    \Procedure{Close}{}
-    \ForAll{$\textrm{term }t \in S$}
-      \State $\textsc{Emit}(\textrm{term }t, \textrm{pair }(S\{t\}, C\{t\}))$
-    \EndFor
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+  def map(key: Text, value: Int) = {
+    sums(key) += value
+    counts(key) += 1
+  }
+
+  def cleanup() = {
+    for (key <- counts) {
+      emit(key, (sums(key), counts(key)))
+    }
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 \section{Pairs and Stripes}
@@ -815,65 +796,61 @@ complex keys in order to coordinate distributed computations.
 \begin{algorithm}[p]
 \caption{Compute word co-occurrence (``pairs'' approach)}
 \label{algorithm:chapter3:coocur:pairs}
+With ``pairs'', each co-occurring pair of words is tracked separately.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (u <- tokenize(value)) {
+      for (v <- neighbors(u)) {
+        emit((u, v), 1)
+      }
+    }
+  }
+}
 
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Map}{$\textrm{docid }a, \textrm{doc }d$}
-    \ForAll{$\textrm{term }w \in \textrm{doc }d$}
-    \ForAll{$\textrm{term }u \in \textsc{Neighbors}(w)$}
-    \State $\textsc{Emit}(\textrm{pair }(w,u), \textrm{count }1)$\Comment{Emit count for each co-occurrence}
-    \EndFor
-    \EndFor
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
-
-  \begin{algorithmic}[1]
-    \Function{Reducer}{}
-    \Procedure{Reduce}{$\textrm{pair }p, \textrm{counts }[c_1, c_2, \ldots ]$}
-    \State $s \gets 0$
-    \ForAll{$\textrm{count }c \in \textrm{counts }[c_1, c_2, \ldots ]$}
-    \State $s \gets s + c$\Comment{Sum co-occurrence counts}
-    \EndFor
-    \State $\textsc{Emit}(\textrm{pair }p, \textrm{count }s)$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Reducer {
+  def reduce(key: Pair, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+    }
+    emit(key, sum)
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 \begin{algorithm}[p]
 \caption{Compute word co-occurrence (``stripes'' approach)}
 \label{algorithm:chapter3:coocur:stripes}
+With ``stripes'', all words co-occurring with a word are tracked
+together.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (u <- tokenize(value)) {
+      val map = new Map()
+      for (v <- neighbors(u)) {
+        map(v) += 1
+      }
+      emit(u, map)
+    }
+  }
+}
 
-\algrenewcommand\algorithmicfunction{\textbf{class}}
-\algrenewcommand\algorithmicprocedure{\textbf{method}}
-  \begin{algorithmic}[1]
-    \Function{Mapper}{}
-    \Procedure{Map}{$\textrm{docid }a, \textrm{doc }d$}
-    \ForAll{$\textrm{term }w \in \textrm{doc }d$}
-    \State $H \gets \textrm{new }\textsc{AssociativeArray}$
-    \ForAll{$\textrm{term }u \in \textsc{Neighbors}(w)$}
-    \State $H\{u\} \gets H\{u\} + 1$\Comment{Tally words co-occurring with $w$}
-    \EndFor
-    \State $\textsc{Emit}(\textrm{Term }w, \textrm{ Stripe }H)$
-    \EndFor
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
-
-  \begin{algorithmic}[1]
-    \Function{Reducer}{}
-    \Procedure{Reduce}{$\textrm{term }w, \textrm{ stripes }[H_1, H_2, H_3,\ldots ]$}
-    \State $H_f \gets \textrm{new }\textsc{AssociativeArray}$
-    \ForAll{$\textrm{stripe }H \in \textrm{stripes }[H_1, H_2, H_3, \ldots ]$}
-    \State $\textsc{Sum}(H_f,H)$\Comment{Element-wise sum}
-    \EndFor
-    \State $\textsc{Emit}(\textrm{term }w, \textrm{stripe }H_f)$
-    \EndProcedure
-    \EndFunction
-  \end{algorithmic}
+class Reducer {
+  def reduce(key: Text, values: Iterable[Map]) = {
+    val map = new Map()
+    for (value <- values) {
+      map += value
+    }
+    emit(key, map)
+  }
+}
+\end{Verbatim}
+\end{small}
 \end{algorithm}
 
 \afterpage{\clearpage}

@@ -218,6 +218,11 @@ datasets by the join key.  The approach isn't particularly efficient
 since it requires shuffling both datasets across the network.  This
 leads us to the \emph{map-side} join.
 
+% Note: what about reduce-side join when L gets too big?
+% Key idea, partition L side, replicate R for each
+% Similar to SKEWED JOIN in Pig, see Gates et al. paper in
+% Bulletin of the IEEE Computer Society Technical Committee on Data Engineering
+
 \subsection{Map-Side Join}
 
 Suppose we have two datasets that are both sorted by the join key.  We
