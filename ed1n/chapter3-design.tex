@@ -3,9 +3,11 @@
 
 \thispagestyle{empty}
 
+\begin{small}
 \noindent This is a post-production manuscript of:\ Jimmy Lin and
 Chris Dyer. Data-Intensive Text Processing with MapReduce. Morgan \&
 Claypool Publishers, 2010. This version was compiled on \today.\\
+\end{small}
 
 \noindent A large part of the power of MapReduce comes from its simplicity:\ in
 addition to preparing the input data, the programmer needs only to
@@ -184,6 +186,32 @@ intermediate key-value pair for each term observed, with the term
 itself as the key and a value of one; reducers sum up the partial
 counts to arrive at the final count.
 
+\begin{algorithm}[t]
+\caption{Word count (repeated from Algorithm~\ref{algorithm:chapter2:word-count:basic})}
+\label{algorithm:chapter3:word-count:basic}
+The mapper emits an intermediate key-value pair for each word in an
+input document. The reducer sums up all counts for each word.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (word <- tokenize(value)) {
+      emit(word, 1)
+  }
+}
+
+class Reducer {
+  def reduce(key: Text, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+    }
+    emit(key, sum)
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
 The first technique for local aggregation is the combiner, already
 discussed in Section~\ref{chapter2:partitioners-and-combiners}.
 Combiners provide a general mechanism within the MapReduce framework
@@ -208,32 +236,6 @@ number of \emph{unique} terms in the collection.\footnote{More
   optimizations, so there is no guarantee that the execution framework
   will take advantage of all opportunities for partial aggregation.}
 
-\begin{algorithm}[t]
-\caption{Word count (repeated from Algorithm~\ref{algorithm:chapter2:word-count:basic})}
-\label{algorithm:chapter3:word-count:basic}
-The mapper emits an intermediate key-value pair for each word in a
-document. The reducer sums up all counts for each word.
-\begin{small}
-\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
-class Mapper {
-  def map(key: Long, value: Text) = {
-    for (word <- tokenize(value)) {
-      emit(word, 1)
-  }
-}
-
-class Reducer {
-  def reduce(key: Text, values: Iterable[Int]) = {
-    for (value <- values) {
-      sum += value
-    }
-    emit(key, sum)
-  }
-}
-\end{Verbatim}
-\end{small}
-\end{algorithm}
-
 An improvement on the basic algorithm is shown in
 Algorithm~\ref{algorithm:chapter3:word-count:inner-hash} (the mapper is
 modified but the reducer remains the same as in
@@ -251,8 +253,8 @@ long documents.
 \begin{algorithm}[t]
 \caption{Word count mapper using associative arrays}
 \label{algorithm:chapter3:word-count:inner-hash}
-The mapper builds a histogram of all words in each input record before
-emitting key-value pairs corresponding to unique words observed.
+The mapper builds a histogram of all words in each input document
+before emitting key-value pairs for unique words observed.
 \begin{small}
 \begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
 class Mapper {
@@ -278,25 +280,25 @@ depends on the details of how map and reduce tasks in Hadoop are
 executed, discussed in Section~\ref{chapter2:cluster-architecture}.
 Recall, a (Java) mapper object is created for each map task, which is
 responsible for processing a block of input key-value pairs.  Prior to
-processing any input key-value pairs, the mapper's \textsc{Initialize}
+processing any input key-value pairs, the mapper's \texttt{setup}
 method is called, which is an API hook for user-specified code.  In
 this case, we initialize an associative array for holding term counts.
 Since it is possible to preserve state across multiple calls of the
-\textsc{Map} method (for each input key-value pair), we can continue
+\texttt{map} method (for each input key-value pair), we can continue
 to accumulate partial term counts in the associative array \emph{
   across} multiple documents, and emit key-value pairs only when the
 mapper has processed all documents.  That is, emission of intermediate
-data is deferred until the \textsc{Close} method in the pseudo-code.
+data is deferred until the \texttt{cleanup} method in the pseudo-code.
 Recall that this API hook provides an opportunity to execute
-user-specified code \emph{after} the \textsc{Map} method has been
+user-specified code \emph{after} the \texttt{map} method has been
 applied to all input key-value pairs of the input data split to which
 the map task was assigned.
 
 \begin{algorithm}[t]
 \caption{Word count mapper using the``in-mapper combining''}
 \label{algorithm:chapter3:word-count:outer-hash}
-The mapper builds a histogram of all input records processed before
-emitting key-value pairs corresponding to unique words observed.
+The mapper builds a histogram of all input documents processed before
+emitting key-value pairs for unique words observed.
 \begin{small}
 \begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
 class Mapper {
@@ -459,7 +461,7 @@ are not interchangeable.
 \begin{algorithm}[t]
 \caption{Compute the mean of values associated with the same key}
 \label{algorithm:chapter3:average}
-Mapper is the identify function; the mean is computed in the reducer.
+The mapper is the identify function; the mean is computed in the reducer.
 \begin{small}
 \begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
 class Mapper {
@@ -565,9 +567,9 @@ class Combiner {
 
 class Reducer {
   def reduce(key: Text, values: Iterable[Pair]) = {
-    for (value <- values) {
-      sum += value.left
-      cnt += value.right
+    for ((s, c) <- values) {
+      sum += s
+      cnt += c
     }
     emit(key, sum/cnt)
   }
@@ -618,9 +620,9 @@ class Mapper {
 
 class Combiner {
   def reduce(key: Text, values: Iterable[Pair]) = {
-    for (value <- values) {
-      sum += value.left
-      cnt += value.right
+    for ((s, c) <- values) {
+      sum += s
+      cnt += c
     }
     emit(key, (sum, cnt))
   }
@@ -628,9 +630,9 @@ class Combiner {
 
 class Reducer {
   def reduce(key: Text, values: Iterable[Pair]) = {
-    for (value <- values) {
-      sum += value.left
-      cnt += value.right
+    for ((s, c) <- values) {
+      sum += s
+      cnt += c
     }
     emit(key, sum/cnt)
   }
@@ -685,7 +687,7 @@ class Mapper  {
   }
 
   def cleanup() = {
-    for (key <- counts) {
+    for (key <- counts.keys) {
       emit(key, (sums(key), counts(key)))
     }
   }
@@ -796,7 +798,7 @@ complex keys in order to coordinate distributed computations.
 \begin{algorithm}[p]
 \caption{Compute word co-occurrence (``pairs'' approach)}
 \label{algorithm:chapter3:coocur:pairs}
-With ``pairs'', each co-occurring pair of words is tracked separately.
+With ``pairs'', each co-occurring pair of words is counted separately.
 \begin{small}
 \begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
 class Mapper {
@@ -824,7 +826,7 @@ class Reducer {
 \begin{algorithm}[p]
 \caption{Compute word co-occurrence (``stripes'' approach)}
 \label{algorithm:chapter3:coocur:stripes}
-With ``stripes'', all words co-occurring with a word are tracked
+With ``stripes'', all words co-occurring with a word are counted
 together.
 \begin{small}
 \begin{Verbatim}[numbers=left, xleftmargin=7.5mm]

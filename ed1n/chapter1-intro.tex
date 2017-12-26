@@ -3,11 +3,13 @@
 
 \thispagestyle{empty}
 
+\begin{small}
 \noindent This is a post-production manuscript of:\ Jimmy Lin and
 Chris Dyer. Data-Intensive Text Processing with MapReduce. Morgan \&
 Claypool Publishers, 2010. This version was compiled on \today.\\
+\end{small}
 
-MapReduce~\cite{Dean_Ghemawat_OSDI2004} is a programming model for
+\noindent MapReduce~\cite{Dean_Ghemawat_OSDI2004} is a programming model for
 expressing distributed computations on massive amounts of data and an
 execution framework for large-scale data processing on clusters of
 commodity servers.  It was originally developed by Google and built on
@@ -105,7 +107,7 @@ common~\cite{Bell_etal_2009}.  For example:
   observing the entire sky every few days.  When the telescope comes
   online around 2015 in Chile, its 3.2 gigapixel primary camera will
   produce approximately half a petabyte of archive images every
-  month~\cite{Becla_etal_2006}.
+  month~\cite{Becla_etal_2006}. \todo{This needs to be updated.}
 
 \item The advent of next-generation DNA sequencing technology has
   created a deluge of sequence data that needs to be stored,
@@ -424,7 +426,8 @@ way and remains the dominant player, but a number of other cloud
 providers populate a market that is becoming increasingly crowded.
 Most systems are based on proprietary infrastructure, but there is at
 least one, Eucalyptus~\cite{Nurmi_etal_2009}, that is available open
-source.  Increased competition will benefit cloud users, but what
+source.  \todo{This needs to be updated.}
+Increased competition will benefit cloud users, but what
 direct relevance does this have for MapReduce?  The connection is
 quite simple:\ processing large amounts of data with MapReduce
 requires access to clusters with sufficient capacity.  However, not
@@ -580,6 +583,8 @@ typical modern datacenters.  However, even factoring in operational
 costs, evidence suggests that scaling out remains more attractive than
 scaling up.
 
+\todo{Worth discussing Cassovary and scale-up approaches here.}
+
 \paragraph{Assume failures are common.} 
 At warehouse scale, failures are not only inevitable, but commonplace.
 A simple calculation suffices to demonstrate:\ let us suppose that a
@@ -612,6 +617,8 @@ manual reconfiguration by the administrator.  Mature implementations of
 the MapReduce programming model are able to robustly cope with
 failures through a number of mechanisms such as automatic task
 restarts on different cluster nodes.
+
+\todo{Worth discussing replication and consistency here.}
 
 \paragraph{Move processing to the data.}
 In traditional high-performance computing (HPC) applications (e.g.,
@@ -777,6 +784,11 @@ ten hours.\footnote{Note that this idea meshes well with utility
 MapReduce, this isn't so far from the truth, at least for some
 applications.
 
+\todo{Mention coarse-grained parallelism and loose-coupling to reduce
+  coordination overhead. Discuss logical vs.\ physical levels. Add
+  section about tradeoffs:\ latency, throughput, availability,
+  consistency, etc.}
+
 \section{Why Is This Different?}
 
 \begin{quote}
@@ -789,7 +801,7 @@ applications.
     written?  You may be surprised.}
 \end{quote}
 
-For several decades, computer scientists have predicted that the dawn
+\noindent For several decades, computer scientists have predicted that the dawn
 of the age of parallel computing was ``right around the corner'' and
 that sequential processing would soon fade into obsolescence
 (consider, for example, the above quote).  Yet, until very recently,

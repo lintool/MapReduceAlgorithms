@@ -3,11 +3,15 @@
 
 \thispagestyle{empty}
 
+\begin{small}
 \noindent This is a post-production manuscript of:\ Jimmy Lin and
 Chris Dyer. Data-Intensive Text Processing with MapReduce. Morgan \&
 Claypool Publishers, 2010. This version was compiled on \today.\\
+\end{small}
 
-The only feasible approach to tackling large-data problems today is to
+\todo{Retitle: From Functional Programming to MapReduce}
+
+\noindent The only feasible approach to tackling large-data problems today is to
 divide and conquer, a fundamental concept in computer science that is
 introduced very early in typical undergraduate curricula.  The basic
 idea is to partition a large problem into smaller sub-problems.  To
@@ -224,9 +228,9 @@ strings, and raw bytes, or they may be arbitrarily complex structures
 (lists, tuples, associative arrays, etc.).  Programmers typically need
 to define their own custom data types, although a number of libraries
 such as Protocol Buffers,\footnote{\texttt{
-http://code.google.com/p/protobuf/}} Thrift,\footnote{\texttt{
-http://incubator.apache.org/thrift/}} and Avro\footnote{\texttt{
-http://hadoop.apache.org/avro/}} simplify the task.
+https://github.com/google/protobuf}} Thrift,\footnote{\texttt{
+http://thrift.apache.org/}} and Avro\footnote{\texttt{
+http://avro.apache.org/}} simplify the task.
 
 Part of the design of MapReduce algorithms involves imposing the
 key-value structure on arbitrary datasets.  For a collection of web
@@ -269,6 +273,7 @@ most part, there is no need to consolidate reducer output, since the
 $r$ files often serve as input to yet another MapReduce job.
 Figure~\ref{figure:chapter2:MapReduce-simple} illustrates this
 two-stage processing structure.
+\todo{Rename ``Shuffle and Sort'' to ``Distributed Group By''.}
 
 \begin{figure}
 \begin{center}
@@ -286,8 +291,8 @@ two-stage processing structure.
 \begin{algorithm}[t]
 \caption{Word count}
 \label{algorithm:chapter2:word-count:basic}
-The mapper emits an intermediate key-value pair for each word in a
-document. The reducer sums up all counts for each word.
+The mapper emits an intermediate key-value pair for each word in an
+input document. The reducer sums up all counts for each word.
 \begin{small}
 \begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
 class Mapper {
@@ -353,10 +358,10 @@ number of output key-value pairs (with different keys).
 To provide a bit more implementation detail:\ pseudo-code provided in
 this book roughly mirrors how MapReduce programs are written in
 Hadoop.  Mappers and reducers are objects that implement
-the \textsc{Map} and \textsc{Reduce} methods, respectively.  In
+the \texttt{map} and \texttt{reduce} methods, respectively.  In
 Hadoop, a mapper object is initialized for each map task (associated
 with a particular sequence of key-value pairs called an input split)
-and the \textsc{Map} method is called on each key-value pair by the
+and the \texttt{map} method is called on each key-value pair by the
 execution framework.  In configuring a MapReduce job, the programmer
 provides a hint on the number of map tasks to run, but the execution
 framework (see next section) makes the final determination based on
@@ -364,7 +369,7 @@ the physical layout of the data (more details in
 Section~\ref{chapter2:dfs} and
 Section~\ref{chapter2:cluster-architecture}).  The situation is
 similar for the reduce phase:\ a reducer object is initialized for
-each reduce task, and the \textsc{Reduce} method is called once per
+each reduce task, and the \texttt{reduce} method is called once per
 intermediate key.  In contrast with the number of map tasks, the
 programmer can precisely specify the number of reduce tasks.  We will
 return to discuss the details of Hadoop job execution in
@@ -477,7 +482,7 @@ policy-driven fashion?  There has been some recent work along these
 lines in the context of
 Hadoop~\cite{Sandholm_Lai_2009,Zaharia_etal_2009}.
 
-Speculative execution is an optimization that is implemented by both
+Speculative execution is an optimization implemented by both
 Hadoop and Google's MapReduce implementation (called ``backup
 tasks''~\cite{Dean_Ghemawat_OSDI2004}).  Due to the barrier between
 the map and reduce tasks, the map phase of a job is only as fast as
@@ -984,13 +989,13 @@ place map tasks on a rack which has a copy of the data block.
 Although conceptually in MapReduce one can think of the mapper being
 applied to all input key-value pairs and the reducer being applied to
 all values associated with the same key, actual job execution is a bit
-more complex.  In Hadoop, mappers are Java objects with a \textsc{Map}
+more complex.  In Hadoop, mappers are Java objects with a \texttt{map}
 method (among others).  A mapper object is instantiated for every map
 task by the tasktracker.  The life-cycle of this object begins with
 instantiation, where a hook is provided in the API to run
 programmer-specified code.  This means that mappers can read in ``side
 data'', providing an opportunity to load state, static data sources,
-dictionaries, etc.  After initialization, the \textsc{Map} method is
+dictionaries, etc.  After initialization, the \texttt{map} method is
 called (by the execution framework) on all key-value pairs in the
 input split.  Since these method calls occur in the context of the
 same Java object, it is possible to preserve state across multiple
@@ -1006,10 +1011,10 @@ Each reducer object is instantiated for every reduce task.  The Hadoop
 API provides hooks for programmer-specified initialization and
 termination code.  After initialization, for each intermediate key in
 the partition (defined by the partitioner), the execution framework
-repeatedly calls the \textsc{Reduce} method with an intermediate key
+repeatedly calls the \texttt{reduce} method with an intermediate key
 and an iterator over all values associated with that key.  The
 programming model also guarantees that intermediate keys will be
-presented to the \textsc{Reduce} method in sorted order.  Since this
+presented to the \texttt{reduce} method in sorted order.  Since this
 occurs in the context of a single object, it is possible to preserve
 state across multiple intermediate keys (and associated values) within
 a single reduce task.  Once again, this property is critical in the
