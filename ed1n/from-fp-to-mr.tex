@@ -1,0 +1,2116 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.0in]{geometry}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{fancyvrb}
+\usepackage{amsmath}
+
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+% https://tex.stackexchange.com/questions/49788/hyperref-url-long-url-with-dashes-wont-break
+
+%\usepackage{afterpage}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\ignore}[1]{}
+
+%\newcommand{\todo}[1]{\textcolor{red}{#1}}
+\newcommand{\todo}[1]{}
+
+%\floatstyle{plain}
+
+\hyphenation{Map-Reduce}
+\hyphenation{Page-Rank}
+\hyphenation{through-put}
+
+
+\begin{document}
+
+\title{The Design of Data-Intensive Distributed Algorithms:\\
+  From Functional Programming to MapReduce}
+
+\author{Jimmy Lin\\[0.5ex]
+David R. Cheriton School of Computer Science\\
+University of Waterloo\\[0.5ex]
+\texttt{jimmylin@uwaterloo.ca}}
+
+\date{Draft of \today}
+
+\maketitle
+
+\tableofcontents
+
+\section{Divide and Conquer}
+\label{chapter2}
+
+\noindent The only feasible approach to tackling large-data problems today is toy
+divide and conquer, a fundamental concept in computer science that is
+introduced very early in typical undergraduate curricula.  The basic
+idea is to partition a large problem into smaller sub-problems.  To
+the extent that the sub-problems are independent~\cite{Amdahl_1967},
+they can be tackled in parallel by different workers---threads in a
+processor core, cores in a multi-core processor, multiple processors
+in a machine, or many machines in a cluster.  Intermediate results
+from each individual worker are then combined to yield the final
+output.\footnote{We note that promising technologies such as quantum
+or biological computing could potentially induce a paradigm shift, but
+they are far from being sufficiently mature to solve real world
+problems.}
+
+The general principles behind divide-and-conquer algorithms are
+broadly applicable to a wide range of problems in many different
+application domains.  However, the details of their implementations
+are varied and complex.  For example, the following are just some of
+the issues that need to be addressed:
+
+\begin{itemize}
+
+\item How do we break up a large problem into smaller tasks?  
+  More specifically, how do we decompose the problem so that the
+  smaller tasks can be executed in parallel?
+
+\item How do we assign tasks to workers distributed across a
+  potentially large number of machines (while keeping in mind that
+  some workers are better suited to running some tasks than others,
+  e.g., due to available resources, locality constraints, etc.)?
+
+\item How do we ensure that the workers get the data they need?
+
+\item How do we coordinate synchronization among the different
+  workers?
+
+\item How do we share partial results from one worker that is needed
+  by another?
+
+\item How do we accomplish all of the above in the face of software
+  errors and hardware faults?
+
+\end{itemize}
+
+In traditional parallel or distributed programming environments, the
+developer needs to explicitly address many (and sometimes, all) of the
+above issues.  In shared memory programming, the developer needs to
+explicitly coordinate access to shared data structures through
+synchronization primitives such as mutexes, to explicitly handle
+process synchronization through devices such as barriers, and to
+remain ever vigilant for common problems such as deadlocks and race
+conditions.  Language extensions, like OpenMP for shared memory
+parallelism,\footnote{\texttt{http://www.openmp.org/}} or libraries
+implementing the Message Passing Interface (MPI) for cluster-level
+parallelism,\footnote{\texttt{http://www.mcs.anl.gov/mpi/}} provide logical
+abstractions that hide details of operating system synchronization and
+communications primitives.  However, even with these extensions,
+developers are still burdened to keep track of how resources are made
+available to workers.  Additionally, these frameworks are mostly
+designed to tackle processor-intensive problems and have only
+rudimentary support for dealing with very large amounts of input data.
+When using existing parallel computing approaches for large-data
+computation, the programmer must devote a significant amount of
+attention to low-level system details, which detracts from
+higher-level problem solving.
+
+One of the most significant advantages of MapReduce is that it
+provides an abstraction that hides many system-level details from the
+programmer.  Therefore, a developer can focus on what computations
+need to be performed, as opposed to how those computations are
+actually carried out or how to get the data to the processes that
+depend on them.  Like OpenMP and MPI, MapReduce provides a means to
+distribute computation without burdening the programmer with the
+details of distributed computing (but at a different level of
+granularity).  However, organizing and coordinating large amounts of
+computation is only part of the challenge.  Large-data processing by
+definition requires bringing data and code together for computation to
+occur---no small feat for datasets that are terabytes and perhaps
+petabytes in size!  MapReduce addresses this challenge by providing a
+simple abstraction for the developer, transparently handling most of
+the details behind the scenes in a scalable, robust, and efficient
+manner.  As we mentioned in Chapter~\ref{chapter1}, instead of moving
+large amounts of data around, it is far more efficient, if possible,
+to move the code to the data.  This is operationally realized by
+spreading data across the local disks of nodes in a cluster and
+running processes on nodes that hold the data.  The complex task of
+managing storage in such a processing environment is typically handled
+by a distributed file system that sits underneath MapReduce.
+
+This chapter introduces the MapReduce programming model and the
+underlying distributed file system.  We start in
+Section~\ref{chapter2:functional} with an overview of functional
+programming, from which MapReduce draws its inspiration.
+Section~\ref{chapter2:mappers-and-reducers} introduces the basic
+programming model, focusing on mappers and reducers.
+Section~\ref{chapter2:execution-framework} discusses the role of the
+execution framework in actually running MapReduce programs (called
+jobs).  Section~\ref{chapter2:partitioners-and-combiners} fills in
+additional details by introducing partitioners and combiners, which
+provide greater control over data flow.  MapReduce would not be
+practical without a tightly-integrated distributed file system that
+manages the data being processed; Section~\ref{chapter2:dfs} covers
+this in detail.  Tying everything together, a complete cluster
+architecture is described in
+Section~\ref{chapter2:cluster-architecture} before the chapter ends
+with a summary.
+
+\section{Functional Programming}
+\label{chapter2:functional}
+
+MapReduce has its roots in functional programming, which is
+exemplified in languages such as Lisp and ML.\footnote{However, there
+are important characteristics of MapReduce that make it non-functional
+in nature---this will become apparent later.} A key feature of
+functional languages is the concept of higher-order functions, or
+functions that can accept other functions as arguments.  Two common
+built-in higher order functions are \emph{map} and \emph{fold},
+illustrated in Figure~\ref{figure:chapter2:functional}.  Given a list,
+\emph{map} takes as an argument a function $f$ (that takes a single
+argument) and applies it to all elements in a list (the top part of
+the diagram).  Given a list, \emph{fold} takes as arguments a function
+$g$ (that takes two arguments) and an initial value:\ $g$ is first
+applied to the initial value and the first item in the list, the
+result of which is stored in an intermediate variable.  This
+intermediate variable and the next item in the list serve as the
+arguments to a second application of $g$, the results of which are
+stored in the intermediate variable.  This process repeats until all
+items in the list have been consumed; \emph{fold} then returns the
+final value of the intermediate variable.  Typically, \emph{map} and
+\emph{fold} are used in combination.  For example, to compute the sum
+of squares of a list of integers, one could map a function that
+squares its argument (i.e., $\lambda x. x^2$) over the input list, and
+then fold the resulting list with the addition function (more
+precisely, $\lambda x \lambda y. x + y$) using an initial value of
+zero.
+
+\begin{figure}[t]
+\begin{center}
+\includegraphics[scale=0.6]{figures/fig-ch2-functional-programming.pdf}
+\end{center}
+\caption{Illustration of \emph{map} and \emph{fold}, two higher-order
+  functions commonly used together in functional programming:\ \emph{
+    map} takes a function $f$ and applies it to every element in a
+    list, while \emph{fold} iteratively applies a function $g$ to
+    aggregate results.}
+\label{figure:chapter2:functional}
+\end{figure}
+
+We can view \emph{map} as a concise way to represent the transformation
+of a dataset (as defined by the function $f$).  In the same vein, we
+can view \emph{fold} as an aggregation operation, as defined by the
+function $g$.  One immediate observation is that the application of
+$f$ to each item in a list (or more generally, to elements in a large
+dataset) can be parallelized in a straightforward manner, since each
+functional application happens in isolation.  In a cluster, these
+operations can be distributed across many different machines.  The
+\emph{fold} operation, on the other hand, has more restrictions on data
+locality---elements in the list must be ``brought together'' before
+the function $g$ can be applied.  However, many real-world
+applications do not require $g$ to be applied to \emph{all} elements of
+the list.  To the extent that elements in the list can be divided into
+groups, the fold aggregations can also proceed in parallel.
+Furthermore, for operations that are commutative and associative,
+significant efficiencies can be gained in the \emph{fold} operation
+through local aggregation and appropriate reordering.
+
+In a nutshell, we have described MapReduce.  The map phase in
+MapReduce roughly corresponds to the \emph{map} operation in functional
+programming, whereas the reduce phase in MapReduce roughly corresponds
+to the \emph{fold} operation in functional programming.  As we will
+discuss in detail shortly, the MapReduce execution framework
+coordinates the map and reduce phases of processing over large amounts
+of data on large clusters of commodity machines.
+
+Viewed from a slightly different angle, MapReduce codifies a generic
+``recipe'' for processing large datasets that consists of two stages.
+In the first stage, a user-specified computation is applied over all
+input records in a dataset.  These operations occur in parallel and
+yield intermediate output that is then aggregated by another
+user-specified computation.  The programmer defines these two types of
+computations, and the execution framework coordinates the actual
+processing (very loosely, MapReduce provides a functional
+abstraction).  Although such a two-stage processing structure may
+appear to be very restrictive, many interesting algorithms can be
+expressed quite concisely---especially if one decomposes complex
+algorithms into a sequence of MapReduce jobs.  Subsequent chapters in
+this book focus on how a number of algorithms can be implemented in
+MapReduce.
+
+To be precise, MapReduce can refer to three distinct but related
+concepts.  First, MapReduce is a programming model, which is the sense
+discussed above.  Second, MapReduce can refer to the execution
+framework (i.e., the ``runtime'') that coordinates the execution of
+programs written in this particular style.  Finally, MapReduce can
+refer to the software implementation of the programming model and the
+execution framework:\ for example, Google's proprietary implementation
+vs.\ the open-source Hadoop implementation in Java.  And in fact,
+there are many implementations of MapReduce, e.g., targeted
+specifically for multi-core processors~\cite{Ranger_etal_2007}, for
+GPGPUs~\cite{HeB_etal_2008}, for the CELL
+architecture~\cite{Rafique_etal_2009}, etc.  There are some
+differences between the MapReduce programming model implemented in
+Hadoop and Google's proprietary implementation, which we will
+explicitly discuss throughout the book.  However, we take a rather
+Hadoop-centric view of MapReduce, since Hadoop remains the most mature
+and accessible implementation to date, and therefore the one most
+developers are likely to use.
+
+\section{MapReduce Basics}
+\label{chapter2:mappers-and-reducers}
+
+\subsection{Mappers and Reducers}
+
+Key-value pairs form the basic data structure in MapReduce.  Keys and
+values may be primitives such as integers, floating point values,
+strings, and raw bytes, or they may be arbitrarily complex structures
+(lists, tuples, associative arrays, etc.).  Programmers typically need
+to define their own custom data types, although a number of libraries
+such as Protocol Buffers,\footnote{\texttt{
+https://github.com/google/protobuf}} Thrift,\footnote{\texttt{
+http://thrift.apache.org/}} and Avro\footnote{\texttt{
+http://avro.apache.org/}} simplify the task.
+
+Part of the design of MapReduce algorithms involves imposing the
+key-value structure on arbitrary datasets.  For a collection of web
+pages, keys may be URLs and values may be the actual HTML content.
+For a graph, keys may represent node ids and values may contain the
+adjacency lists of those nodes (see Chapter~\ref{chapter-graphs} for
+more details). In some algorithms, input keys are not particularly
+meaningful and are simply ignored during processing, while in other
+cases input keys are used to uniquely identify a datum (such as a
+record id).  In Chapter~\ref{chapter3}, we discuss the role of complex
+keys and values in the design of various algorithms.
+
+In MapReduce, the programmer defines a mapper and a reducer with the
+following signatures:
+
+\begin{quote}
+map: $(k_1, v_1) \rightarrow [(k_2, v_2)]$ \\
+reduce: $(k_2, [v_2]) \rightarrow [(k_3, v_3)]$
+\end{quote}
+
+\noindent The convention $[\ldots]$ is used
+throughout this book to denote a list.  The input to a MapReduce job
+starts as data stored on the underlying distributed file system (see
+Section~\ref{chapter2:dfs}).  The mapper is applied to every input
+key-value pair (split across an arbitrary number of files) to generate
+an arbitrary number of intermediate key-value pairs.  The reducer is
+applied to all values associated with the same intermediate key to
+generate output key-value pairs.\footnote{This characterization, while
+conceptually accurate, is a slight simplification.  See
+Section~\ref{chapter2:cluster-architecture} for more details.}
+Implicit between the map and reduce phases is a distributed ``group
+by'' operation on intermediate keys.  Intermediate data arrive at each
+reducer in order, sorted by the key.  However, no ordering
+relationship is guaranteed for keys across different reducers.  Output
+key-value pairs from each reducer are written persistently back onto
+the distributed file system (whereas intermediate key-value pairs are
+transient and not preserved).  The output ends up in $r$ files on the
+distributed file system, where $r$ is the number of reducers.  For the
+most part, there is no need to consolidate reducer output, since the
+$r$ files often serve as input to yet another MapReduce job.
+Figure~\ref{figure:chapter2:MapReduce-simple} illustrates this
+two-stage processing structure.
+\todo{Rename ``Shuffle and Sort'' to ``Distributed Group By''.}
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.6]{figures/fig-ch2-MapReduce-simple.pdf}
+\end{center}
+\caption{Simplified view of MapReduce.  Mappers are applied to all
+  input key-value pairs, which generate an arbitrary number of
+  intermediate key-value pairs.  Reducers are applied to all values
+  associated with the same key.  Between the map and reduce phases
+  lies a barrier that involves a large distributed sort and group by.}
+\label{figure:chapter2:MapReduce-simple}
+\end{figure}
+
+
+\begin{algorithm}[t]
+\caption{Word count}
+\label{algorithm:chapter2:word-count:basic}
+The mapper emits an intermediate key-value pair for each word in an
+input document. The reducer sums up all counts for each word.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (word <- tokenize(value)) {
+      emit(word, 1)
+  }
+}
+
+class Reducer {
+  def reduce(key: Text, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+    }
+    emit(key, sum)
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+A simple word count algorithm in MapReduce is shown in
+Algorithm~\ref{algorithm:chapter2:word-count:basic}.  This algorithm counts the
+number of occurrences of every word in a text collection, which may be
+the first step in, for example, building a unigram language model
+(i.e., probability distribution over words in a collection).  Input
+key-values pairs take the form of (docid, doc) pairs stored on the
+distributed file system, where the former is a unique identifier for
+the document, and the latter is the text of the document itself.  The
+mapper takes an input key-value pair, tokenizes the document, and
+emits an intermediate key-value pair for every word:\ the word itself
+serves as the key, and the integer one serves as the value (denoting
+that we've seen the word once).  The MapReduce execution framework
+guarantees that all values associated with the same key are brought
+together in the reducer.  Therefore, in our word count algorithm, we
+simply need to sum up all counts (ones) associated with each word.
+The reducer does exactly this, and emits final key-value pairs with
+the word as the key, and the count as the value.  Final output is
+written to the distributed file system, one file per reducer.  Words
+within each file will be sorted by alphabetical order, and each file
+will contain roughly the same number of words.  The partitioner, which
+we discuss later in Section~\ref{chapter2:partitioners-and-combiners},
+controls the assignment of words to reducers.  The output can be
+examined by the programmer or used as input to another MapReduce
+program.
+
+There are some differences between the Hadoop implementation of
+MapReduce and Google's implementation.\footnote{Personal
+communication, Jeff Dean.}  In Hadoop, the reducer is presented with a
+key and an iterator over all values associated with the particular
+key.  The values are arbitrarily ordered.  Google's implementation
+allows the programmer to specify a secondary sort key for ordering the
+values (if desired)---in which case values associated with each key
+would be presented to the developer's reduce code in sorted order.
+Later in Section~\ref{chapter3:secondary-sorting} we discuss how to
+overcome this limitation in Hadoop to perform secondary sorting.
+Another difference:\ in Google's implementation the programmer is not
+allowed to change the key in the reducer.  That is, the reducer output
+key must be exactly the same as the reducer input key.  In Hadoop,
+there is no such restriction, and the reducer can emit an arbitrary
+number of output key-value pairs (with different keys).
+
+To provide a bit more implementation detail:\ pseudo-code provided in
+this book roughly mirrors how MapReduce programs are written in
+Hadoop.  Mappers and reducers are objects that implement
+the \texttt{map} and \texttt{reduce} methods, respectively.  In
+Hadoop, a mapper object is initialized for each map task (associated
+with a particular sequence of key-value pairs called an input split)
+and the \texttt{map} method is called on each key-value pair by the
+execution framework.  In configuring a MapReduce job, the programmer
+provides a hint on the number of map tasks to run, but the execution
+framework (see next section) makes the final determination based on
+the physical layout of the data (more details in
+Section~\ref{chapter2:dfs} and
+Section~\ref{chapter2:cluster-architecture}).  The situation is
+similar for the reduce phase:\ a reducer object is initialized for
+each reduce task, and the \texttt{reduce} method is called once per
+intermediate key.  In contrast with the number of map tasks, the
+programmer can precisely specify the number of reduce tasks.  We will
+return to discuss the details of Hadoop job execution in
+Section~\ref{chapter2:cluster-architecture}, which is dependent on an
+understanding of the distributed file system (covered in
+Section~\ref{chapter2:dfs}).  To reiterate:\ although the presentation
+of algorithms in this book closely mirrors the way they would be
+implemented in Hadoop, our focus is on algorithm design and conceptual
+understanding---not actual Hadoop programming.  For that, we would
+recommend Tom White's book~\cite{White_2009}.
+
+What are the restrictions on mappers and reducers?  Mappers and
+reducers can express arbitrary computations over their inputs.
+However, one must generally be careful about use of external resources
+since multiple mappers or reducers may be contending for those
+resources.  For example, it may be unwise for a mapper to query an
+external SQL database, since that would introduce a scalability
+bottleneck on the number of map tasks that could be run in parallel
+(since they might all be simultaneously querying the
+database).\footnote{Unless, of course, the database itself is highly
+scalable.} In general, mappers can emit an arbitrary number of
+intermediate key-value pairs, and they need not be of the same type as
+the input key-value pairs.  Similarly, reducers can emit an arbitrary
+number of final key-value pairs, and they can differ in type from the
+intermediate key-value pairs.  Although not permitted in functional
+programming, mappers and reducers can have side effects.  This is a
+powerful and useful feature:\ for example, preserving state across
+multiple inputs is central to the design of many MapReduce algorithms
+(see Chapter~\ref{chapter3}).  Such algorithms can be understood as
+having side effects that only change state that is \emph{internal} to
+the mapper or reducer.  While the correctness of such algorithms may
+be more difficult to guarantee (since the function's behavior depends
+not only on the current input but on previous inputs), most potential
+synchronization problems are avoided since internal state is private
+only to individual mappers and reducers.  In other cases (see
+Section~\ref{chapter-indexing:index:revised} and
+Section~\ref{chapter6_variants}), it may be useful for mappers or
+reducers to have \emph{external} side effects, such as writing files
+to the distributed file system.  Since many mappers and reducers are
+run in parallel, and the distributed file system is a shared global
+resource, special care must be taken to ensure that such operations
+avoid synchronization conflicts.  One strategy is to write a temporary
+file that is renamed upon successful completion of the mapper or
+reducer~\cite{Dean_Ghemawat_OSDI2004}.
+
+In addition to the ``canonical'' MapReduce processing flow, other
+variations are also possible.  MapReduce programs can contain no
+reducers, in which case mapper output is directly written to disk (one
+file per mapper).  For embarrassingly parallel problems, e.g., parse a
+large text collection or independently analyze a large number of
+images, this would be a common pattern.  The converse---a MapReduce
+program with no mappers---is not possible, although in some cases it
+is useful for the mapper to implement the identity function and simply
+pass input key-value pairs to the reducers.  This has the effect of
+sorting and regrouping the input for reduce-side processing.
+Similarly, in some cases it is useful for the reducer to implement the
+identity function, in which case the program simply sorts and groups
+mapper output.  Finally, running identity mappers and reducers has the
+effect of regrouping and resorting the input data (which is sometimes
+useful).
+
+Although in the most common case, input to a MapReduce job comes from
+data stored on the distributed file system and output is written back
+to the distributed file system, any other system that satisfies the
+proper abstractions can serve as a data source or sink.  With Google's
+MapReduce implementation, BigTable~\cite{ChangFay_etal_OSDI2006}, a
+sparse, distributed, persistent multidimensional sorted map, is
+frequently used as a source of input and as a store of MapReduce
+output.  HBase is an open-source BigTable clone and has similar
+capabilities.  Also, Hadoop has been integrated with existing MPP
+(massively parallel processing) relational databases, which allows a
+programmer to write MapReduce jobs over database rows and dump output
+into a new database table.  Finally, in some cases MapReduce jobs may
+not consume any input at all (e.g., computing $\pi$) or may only
+consume a small amount of data (e.g., input parameters to many
+instances of processor-intensive simulations running in parallel).
+
+\subsection{Partitioners and Combiners}
+\label{chapter2:partitioners-and-combiners}
+
+We have thus far presented a simplified view of MapReduce.  There are
+two additional elements that complete the programming model:\
+partitioners and combiners.
+
+Partitioners are responsible for dividing up the intermediate key
+space and assigning intermediate key-value pairs to reducers.  In
+other words, the partitioner specifies the task to which an
+intermediate key-value pair must be copied.  Within each reducer, keys
+are processed in sorted order (which is how the ``group by'' is
+implemented).  The simplest partitioner involves computing the hash
+value of the key and then taking the mod of that value with the number
+of reducers.  This assigns approximately the same number of keys to
+each reducer (dependent on the quality of the hash function).  Note,
+however, that the partitioner only considers the key and ignores the
+value---therefore, a roughly-even partitioning of the key space may
+nevertheless yield large differences in the number of key-values pairs
+sent to each reducer (since different keys may have different numbers
+of associated values).  This imbalance in the amount of data
+associated with each key is relatively common in many text processing
+applications due to the Zipfian distribution of word occurrences.
+
+Combiners are an optimization in MapReduce that allow for local
+aggregation before the shuffle and sort phase.  We can motivate the
+need for combiners by considering the word count algorithm in
+Algorithm~\ref{algorithm:chapter2:word-count:basic}, which emits a key-value pair
+for each word in the collection.  Furthermore, all these key-value
+pairs need to be copied across the network, and so the amount of
+intermediate data will be larger than the input collection itself.
+This is clearly inefficient.  One solution is to perform local
+aggregation on the output of each mapper, i.e., to compute a local
+count for a word over all the documents processed by the mapper.  With
+this modification (assuming the maximum amount of local aggregation
+possible), the number of intermediate key-value pairs will be at most
+the number of unique words in the collection times the number of
+mappers (and typically far smaller because each mapper may not
+encounter every word).
+
+The combiner in MapReduce supports such an optimization.  One can
+think of combiners as ``mini-reducers'' that take place on the output
+of the mappers, prior to the shuffle and sort phase.  Each combiner
+operates in isolation and therefore does not have access to
+intermediate output from other mappers.  The combiner is provided keys
+and values associated with each key (the same types as the mapper
+output keys and values).  Critically, one cannot assume that a
+combiner will have the opportunity to process \emph{all} values
+associated with the same key.  The combiner can emit any number of
+key-value pairs, but the keys and values must be of the same type as
+the mapper output (same as the reducer input).\footnote{A note on the
+implementation of combiners in Hadoop:\ by default, the execution
+framework reserves the right to use combiners at its discretion.  In
+reality, this means that a combiner may be invoked zero, one, or
+multiple times.  In addition, combiners in Hadoop may actually be
+invoked in the reduce phase, i.e., after key-value pairs have been
+copied over to the reducer, but before the user reducer code runs.  As
+a result, combiners must be carefully written so that they can be
+executed in these different environments.
+Section~\ref{chapter3:local-aggregation:correctness} discusses this in
+more detail.}  In cases where an operation is both associative and
+commutative (e.g., addition or multiplication), reducers can directly
+serve as combiners.  In general, however, reducers and combiners are
+not interchangeable.
+
+In many cases, proper use of combiners can spell the difference
+between an impractical algorithm and an efficient algorithm.  This
+topic will be discussed in Section~\ref{chapter3:local-aggregation},
+which focuses on various techniques for local aggregation.  It
+suffices to say for now that a combiner can significantly reduce the
+amount of data that needs to be copied over the network, resulting in
+much faster algorithms.
+
+The complete MapReduce model is shown in
+Figure~\ref{figure:chapter2:MapReduce-complete}.  Output of the
+mappers are processed by the combiners, which perform local
+aggregation to cut down on the number of intermediate key-value pairs.
+The partitioner determines which reducer will be responsible for
+processing a particular key, and the execution framework uses this
+information to copy the data to the right location during the shuffle
+and sort phase.\footnote{In Hadoop, partitioners are actually executed
+before combiners, so while
+Figure~\ref{figure:chapter2:MapReduce-complete} is conceptually
+accurate, it doesn't precisely describe the Hadoop implementation.}
+Therefore, a complete MapReduce job consists of code for the mapper,
+reducer, combiner, and partitioner, along with job configuration
+parameters.  The execution framework handles everything else.
+
+\begin{figure}[t]
+\begin{center}
+\includegraphics[scale=0.6]{figures/fig-ch2-MapReduce-complete.pdf}
+\end{center}
+\caption{Complete view of MapReduce, illustrating combiners and
+  partitioners in addition to mappers and reducers.  Combiners can be
+  viewed as ``mini-reducers'' in the map phase.  Partitioners
+  determine which reducer is responsible for a particular key.}
+\label{figure:chapter2:MapReduce-complete}
+\end{figure}
+
+\subsection{The Execution Framework}
+\label{chapter2:execution-framework}
+
+One of the most important idea behind MapReduce is separating the \emph{
+what} of distributed processing from the \emph{how}.  A MapReduce
+program, referred to as a job, consists of code for mappers and
+reducers (as well as combiners and partitioners to be discussed in the
+next section) packaged together with configuration parameters (such as
+where the input lies and where the output should be stored).  The
+developer submits the job to the submission node of a cluster (in
+Hadoop, this is called the jobtracker) and execution framework
+(sometimes called the ``runtime'') takes care of everything else:\ it
+transparently handles all other aspects of distributed code execution,
+on clusters ranging from a single node to a few thousand nodes.
+Specific responsibilities include:
+
+\paragraph{Scheduling.} Each MapReduce job is divided into smaller
+units called tasks (see Section~\ref{chapter2:cluster-architecture}
+for more details).  For example, a map task may be responsible for
+processing a certain block of input key-value pairs (called an input
+split in Hadoop); similarly, a reduce task may handle a portion of the
+intermediate key space.  It is not uncommon for MapReduce jobs to have
+thousands of individual tasks that need to be assigned to nodes in the
+cluster.  In large jobs, the total number of tasks may exceed the
+number of tasks that can be run on the cluster concurrently, making it
+necessary for the scheduler to maintain some sort of a task queue and
+to track the progress of running tasks so that waiting tasks can be
+assigned to nodes as they become available.  Another aspect of
+scheduling involves coordination among tasks belonging to different
+jobs (e.g., from different users).  How can a large, shared resource
+support several users simultaneously in a predictable, transparent,
+policy-driven fashion?  There has been some recent work along these
+lines in the context of
+Hadoop~\cite{Sandholm_Lai_2009,Zaharia_etal_2009}.
+
+Speculative execution is an optimization implemented by both
+Hadoop and Google's MapReduce implementation (called ``backup
+tasks''~\cite{Dean_Ghemawat_OSDI2004}).  Due to the barrier between
+the map and reduce tasks, the map phase of a job is only as fast as
+the slowest map task.  Similarly, the completion time of a job is
+bounded by the running time of the slowest reduce task.  As a result,
+the speed of a MapReduce job is sensitive to what are known as \emph{
+stragglers}, or tasks that take an usually long time to complete.  One
+cause of stragglers is flaky hardware:\ for example, a machine that is
+suffering from recoverable errors may become significantly slower.
+With speculative execution, an identical copy of the same task is
+executed on a different machine, and the framework simply uses the
+result of the first task attempt to finish.  Zaharia et
+al.~\cite{Zaharia_etal_OSDI2008} presented different execution
+strategies in a recent paper, and Google has reported that speculative
+execution can improve job running times by
+44\%~\cite{Dean_Ghemawat_OSDI2004}.  Although in Hadoop both map and
+reduce tasks can be speculatively executed, the common wisdom is that
+the technique is more helpful for map tasks than reduce tasks, since
+each copy of the reduce task needs to pull data over the network.
+Note, however, that speculative execution cannot adequately address
+another common cause of stragglers:\ skew in the distribution of
+values associated with intermediate keys (leading to reduce
+stragglers).  In text processing we often observe Zipfian
+distributions, which means that the task or tasks responsible for
+processing the most frequent few elements will run much longer than
+the typical task.  Better local aggregation, discussed in the next
+chapter, is one possible solution to this problem.
+
+\paragraph{Data/code co-location.}  The phrase \emph{data
+  distribution} is misleading, since one of the key ideas behind
+MapReduce is to move the code, not the data.  However, the more
+general point remains---in order for computation to occur, we need to
+somehow feed data to the code.  In MapReduce, this issue is
+inextricably intertwined with scheduling and relies heavily on the
+design of the underlying distributed file system.\footnote{In the
+canonical case, that is.  Recall that MapReduce may receive its input
+from other sources.} To achieve data locality, the scheduler starts
+tasks on the node that holds a particular block of data (i.e., on its
+local drive) needed by the task.  This has the effect of moving code
+to the data.  If this is not possible (e.g., a node is already running
+too many tasks), new tasks will be started elsewhere, and the
+necessary data will be streamed over the network.  An important
+optimization here is to prefer nodes that are on the same rack in the
+datacenter as the node holding the relevant data block, since
+inter-rack bandwidth is significantly less than intra-rack bandwidth.
+
+\paragraph{Synchronization.} In general, synchronization refers to
+the mechanisms by which multiple concurrently running processes ``join
+up'', for example, to share intermediate results or otherwise exchange
+state information.  In MapReduce, synchronization is accomplished by a
+barrier between the map and reduce phases of processing.  Intermediate
+key-value pairs must be grouped by key, which is accomplished by a
+large distributed sort involving all the nodes that executed map tasks
+and all the nodes that will execute reduce tasks.  This necessarily
+involves copying intermediate data over the network, and therefore the
+process is commonly known as ``shuffle and sort''.  A MapReduce job
+with $m$ mappers and $r$ reducers involves up to $m \times r$ distinct
+copy operations, since each mapper may have intermediate output going
+to every reducer.
+
+Note that the reduce computation cannot start until all the mappers
+have finished emitting key-value pairs and all intermediate key-value
+pairs have been shuffled and sorted, since the execution framework
+cannot otherwise guarantee that all values associated with the same
+key have been gathered.  This is an important departure from
+functional programming:\ in a \emph{fold} operation, the aggregation
+function $g$ is a function of the intermediate value and the next item
+in the list---which means that values can be lazily generated and
+aggregation can begin as soon as values are available.  In contrast,
+the reducer in MapReduce receives \emph{all} values associated with the
+same key at once.  However, it is possible to start copying
+intermediate key-value pairs over the network to the nodes running the
+reducers as soon as each mapper finishes---this is a common
+optimization and implemented in Hadoop.
+
+\paragraph{Error and fault handling.}  The MapReduce execution
+framework must accomplish all the tasks above in an environment where
+errors and faults are the norm, not the exception.  Since MapReduce
+was explicitly designed around low-end commodity servers, the runtime
+must be especially resilient.  In large clusters, disk failures are
+common~\cite{Pinheiro_etal_2007} and RAM experiences more errors than
+one might expect~\cite{Schroeder_etal_2009}.  Datacenters suffer from
+both planned outages (e.g., system maintenance and hardware upgrades)
+and unexpected outages (e.g., power failure, connectivity loss, etc.).
+
+And that's just hardware.  No software is bug free---exceptions must
+be appropriately trapped, logged, and recovered from.  Large-data
+problems have a penchant for uncovering obscure corner cases in code
+that is otherwise thought to be bug-free.  Furthermore, any
+sufficiently large dataset will contain corrupted data or records that
+are mangled beyond a programmer's imagination---resulting in errors
+that one would never think to check for or trap.  The MapReduce
+execution framework must thrive in this hostile environment.
+
+\section{MapReduce Algorithm Design}
+\label{chapter3}
+
+\noindent A large part of the power of MapReduce comes from its simplicity:\ in
+addition to preparing the input data, the programmer needs only to
+implement the mapper, the reducer, and optionally, the combiner and
+the partitioner.  All other aspects of execution are handled
+transparently by the execution framework---on clusters ranging from a
+single node to a few thousand nodes, over datasets ranging from
+gigabytes to petabytes.  However, this also means that any conceivable
+algorithm that a programmer wishes to develop must be expressed in
+terms of a small number of rigidly-defined components that must fit
+together in very specific ways.  It may not appear obvious how a
+multitude of algorithms can be recast into this programming model.
+The purpose of this chapter is to provide, primarily through examples,
+a guide to MapReduce algorithm design.  These examples illustrate what
+can be thought of as ``design patterns'' for MapReduce, which
+instantiate arrangements of components and specific techniques
+designed to handle frequently-encountered situations across a variety
+of problem domains.  Two of these design patterns are used in the
+scalable inverted indexing algorithm we'll present later in
+Chapter~\ref{chapter-indexing}; concepts presented here will show up
+again in Chapter~\ref{chapter-graphs} (graph processing) and
+Chapter~\ref{chapter6} (expectation-maximization algorithms).
+
+Synchronization is perhaps the most tricky aspect of designing
+MapReduce algorithms (or for that matter, parallel and distributed
+algorithms in general).  Other than embarrassingly-parallel problems,
+processes running on separate nodes in a cluster must, at some point
+in time, come together---for example, to distribute partial results
+from nodes that produced them to the nodes that will consume them.
+Within a single MapReduce job, there is only one opportunity for
+cluster-wide synchronization---during the shuffle and sort stage where
+intermediate key-value pairs are copied from the mappers to the
+reducers and grouped by key.  Beyond that, mappers and reducers run in
+isolation without any mechanisms for direct communication.
+Furthermore, the programmer has little control over many aspects of
+execution, for example:
+
+\begin{itemize}
+
+\item \emph{Where} a mapper or reducer runs (i.e., on which node in the
+  cluster).
+
+\item \emph{When} a mapper or reducer begins or finishes.
+
+\item \emph{Which} input key-value pairs are processed by a specific
+  mapper.
+
+\item \emph{Which} intermediate key-value pairs are processed by a
+  specific reducer.
+
+\end{itemize}
+
+\noindent Nevertheless, the programmer does have a number of
+techniques for controlling execution and managing the flow of data in
+MapReduce.  In summary, they are:
+
+\begin{enumerate}
+
+\item The ability to construct complex data structures as keys and
+  values to store and communicate partial results.
+
+\item The ability to execute user-specified initialization code at the
+  beginning of a map or reduce task, and the ability to execute
+  user-specified termination code at the end of a map or reduce task.
+
+\item The ability to preserve state in both mappers and reducers
+  across multiple input or intermediate keys.
+
+\item The ability to control the sort order of intermediate keys, and
+  therefore the order in which a reducer will encounter particular
+  keys.
+
+\item The ability to control the partitioning of the key space, and
+  therefore the set of keys that will be encountered by a particular
+  reducer.
+
+\end{enumerate}
+
+\noindent It is important to realize that many algorithms cannot be
+easily expressed as a single MapReduce job.  One must often decompose
+complex algorithms into a sequence of jobs, which requires
+orchestrating data so that the output of one job becomes the input to
+the next.  Many algorithms are iterative in nature, requiring repeated
+execution until some convergence criteria---graph algorithms in
+Chapter~\ref{chapter-graphs} and expectation-maximization algorithms
+in Chapter~\ref{chapter6} behave in exactly this way.  Often, the
+convergence check itself cannot be easily expressed in MapReduce.  The
+standard solution is an external (non-MapReduce) program that serves
+as a ``driver'' to coordinate MapReduce iterations.
+
+This chapter explains how various techniques to control code execution
+and data flow can be applied to design algorithms in MapReduce.  The
+focus is both on scalability---ensuring that there are no inherent
+bottlenecks as algorithms are applied to increasingly larger
+datasets---and efficiency---ensuring that algorithms do not needlessly
+consume resources and thereby reducing the cost of parallelization.
+The gold standard, of course, is linear scalability:\ an algorithm
+running on twice the amount of data should take only twice as long.
+Similarly, an algorithm running on twice the number of nodes should
+only take half as long.  
+
+The chapter is organized as follows:
+
+\begin{itemize}
+
+\item Section~\ref{chapter3:local-aggregation} introduces the
+  important concept of local aggregation in MapReduce and strategies
+  for designing efficient algorithms that minimize the amount of
+  partial results that need to be copied across the network.  The
+  proper use of combiners is discussed in detail, as well as the
+  ``in-mapper combining'' design pattern.
+
+\item Section~\ref{chapter3:pairs-and-stripes} uses the example of
+  building word co-occurrence matrices on large text corpora to
+  illustrate two common design patterns, which we dub ``pairs'' and
+  ``stripes''.  These two approaches are useful in a large class of
+  problems that require keeping track of joint events across a large
+  number of observations.
+
+\item Section~\ref{chapter3:cond-prob} shows how co-occurrence counts
+  can be converted into relative frequencies using a pattern known as
+  ``order inversion''.  The sequencing of computations in the reducer
+  can be recast as a sorting problem, where pieces of intermediate
+  data are sorted into exactly the order that is required to carry out
+  a series of computations.  Often, a reducer needs to compute an
+  aggregate statistic on a set of elements before individual elements
+  can be processed.  Normally, this would require two passes over the
+  data, but with the ``order inversion'' design pattern, the aggregate
+  statistic can be computed in the reducer before the individual
+  elements are encountered.  This may seem counter-intuitive:\ how can
+  we compute an aggregate statistic on a set of elements before
+  encountering elements of that set?  As it turns out, clever sorting
+  of special key-value pairs enables exactly this.
+
+\item Section~\ref{chapter3:secondary-sorting} provides a general
+  solution to secondary sorting, which is the problem of sorting
+  values associated with a key in the reduce phase.  We call this
+  technique ``value-to-key conversion''.
+
+%\item Section~\ref{chapter3:joins} covers the topic of performing
+%  joins on relational datasets and presents three different
+%  approaches:\ \emph{reduce-side}, \emph{map-side}, and \emph{
+%    memory-backed} joins.
+
+\end{itemize}
+
+\subsection{Combiners and In-Mapper Combining}
+\label{chapter3:local-aggregation}
+
+In the context of data-intensive distributed processing, the single
+most important aspect of synchronization is the exchange of
+intermediate results, from the processes that produced them to the
+processes that will ultimately consume them.  In a cluster
+environment, with the exception of embarrassingly-parallel problems,
+this necessarily involves transferring data over the network.
+Furthermore, in Hadoop, intermediate results are written to local disk
+before being sent over the network.  Since network and disk latencies
+are relatively expensive compared to other operations, reductions in
+the amount of intermediate data translate into increases in
+algorithmic efficiency.  In MapReduce, local aggregation of
+intermediate results is one of the keys to efficient algorithms.
+Through use of the combiner and by taking advantage of the ability to
+preserve state across multiple inputs, it is often possible to
+substantially reduce both the number and size of key-value pairs that
+need to be shuffled from the mappers to the reducers.
+
+We illustrate various techniques for local aggregation using the
+simple word count example presented in
+Section~\ref{chapter2:mappers-and-reducers}.  For convenience,
+Algorithm~\ref{algorithm:chapter3:word-count:basic} repeats the pseudo-code
+of the basic algorithm, which is quite simple:\ the mapper emits an
+intermediate key-value pair for each term observed, with the term
+itself as the key and a value of one; reducers sum up the partial
+counts to arrive at the final count.
+
+\begin{algorithm}[t]
+\caption{Word count (repeated from Algorithm~\ref{algorithm:chapter2:word-count:basic})}
+\label{algorithm:chapter3:word-count:basic}
+The mapper emits an intermediate key-value pair for each word in an
+input document. The reducer sums up all counts for each word.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (word <- tokenize(value)) {
+      emit(word, 1)
+  }
+}
+
+class Reducer {
+  def reduce(key: Text, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+    }
+    emit(key, sum)
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+The first technique for local aggregation is the combiner, already
+discussed in Section~\ref{chapter2:partitioners-and-combiners}.
+Combiners provide a general mechanism within the MapReduce framework
+to reduce the amount of intermediate data generated by the
+mappers---recall that they can be understood as ``mini-reducers'' that
+process the output of mappers.  In this example, the combiners
+aggregate term counts across the documents processed by each map task.
+This results in a reduction in the number of intermediate key-value
+pairs that need to be shuffled across the network---from the order of
+\emph{total} number of terms in the collection to the order of the
+number of \emph{unique} terms in the collection.\footnote{More
+  precisely, if the combiners take advantage of all opportunities for
+  local aggregation, the algorithm would generate at most $m \times V$
+  intermediate key-value pairs, where $m$ is the number of mappers and
+  $V$ is the vocabulary size (number of unique terms in the
+  collection), since every term could have been observed in every
+  mapper.  However, there are two additional factors to consider.  Due
+  to the Zipfian nature of term distributions, most terms will not be
+  observed by most mappers (for example, terms that occur only once
+  will by definition only be observed by one mapper).  On the other
+  hand, combiners in Hadoop are treated as \emph{optional}
+  optimizations, so there is no guarantee that the execution framework
+  will take advantage of all opportunities for partial aggregation.}
+
+An improvement on the basic algorithm is shown in
+Algorithm~\ref{algorithm:chapter3:word-count:inner-hash} (the mapper is
+modified but the reducer remains the same as in
+Algorithm~\ref{algorithm:chapter3:word-count:basic} and therefore is not
+repeated).  An associative array (i.e., Map in Java) is introduced
+inside the mapper to tally up term counts within a single
+document:\ instead of emitting a key-value pair for each term in the
+document, this version emits a key-value pair for each \emph{unique}
+term in the document.  Given that some words appear frequently within
+a document (for example, a document about dogs is likely to have many
+occurrences of the word ``dog''), this can yield substantial savings
+in the number of intermediate key-value pairs emitted, especially for
+long documents.
+
+\begin{algorithm}[t]
+\caption{Word count mapper using associative arrays}
+\label{algorithm:chapter3:word-count:inner-hash}
+The mapper builds a histogram of all words in each input document
+before emitting key-value pairs for unique words observed.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    val counts = new Map()
+    for (word <- tokenize(value)) {
+      counts(word) += 1
+    }
+    for ((k, v) <- counts) {
+      emit(k, v)
+    }
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+This basic idea can be taken one step further, as illustrated in the
+variant of the word count algorithm in
+Algorithm~\ref{algorithm:chapter3:word-count:outer-hash} (once again, only
+the mapper is modified).  The workings of this algorithm critically
+depends on the details of how map and reduce tasks in Hadoop are
+executed, discussed in Section~\ref{chapter2:cluster-architecture}.
+Recall, a (Java) mapper object is created for each map task, which is
+responsible for processing a block of input key-value pairs.  Prior to
+processing any input key-value pairs, the mapper's \texttt{setup}
+method is called, which is an API hook for user-specified code.  In
+this case, we initialize an associative array for holding term counts.
+Since it is possible to preserve state across multiple calls of the
+\texttt{map} method (for each input key-value pair), we can continue
+to accumulate partial term counts in the associative array \emph{
+  across} multiple documents, and emit key-value pairs only when the
+mapper has processed all documents.  That is, emission of intermediate
+data is deferred until the \texttt{cleanup} method in the pseudo-code.
+Recall that this API hook provides an opportunity to execute
+user-specified code \emph{after} the \texttt{map} method has been
+applied to all input key-value pairs of the input data split to which
+the map task was assigned.
+
+\begin{algorithm}[t]
+\caption{Word count mapper using the``in-mapper combining''}
+\label{algorithm:chapter3:word-count:outer-hash}
+The mapper builds a histogram of all input documents processed before
+emitting key-value pairs for unique words observed.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  val counts = new Map()
+
+  def map(key: Long, value: Text) = {
+    for (word <- tokenize(value)) {
+      counts(word) += 1
+    }
+  }
+
+  def cleanup() = {
+    for ((k, v) <- counts) {
+      emit(k, v)
+    }
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+With this technique, we are in essence incorporating combiner
+functionality directly inside the mapper.  There is no need to run a
+separate combiner, since all opportunities for local aggregation are
+already exploited.\footnote{Leaving aside the minor complication that
+  in Hadoop, combiners can be run in the reduce phase also (when
+  merging intermediate key-value pairs from different map tasks).
+  However, in practice it makes almost no difference either way.} This
+is a sufficiently common design pattern in MapReduce that it's worth
+giving it a name, ``in-mapper combining'', so that we can refer to the
+pattern more conveniently throughout the book.  We'll see later on how
+this pattern can be applied to a variety of problems.  There are two
+main advantages to using this design pattern:
+
+First, it provides control over when local aggregation occurs and how
+it exactly takes place.  In contrast, the semantics of the combiner is
+underspecified in MapReduce.  For example, Hadoop makes no guarantees
+on how many times the combiner is applied, or that it is even applied
+at all.  The combiner is provided as a semantics-preserving
+optimization to the execution framework, which has the \emph{option} of
+using it, perhaps multiple times, or not at all (or even in the reduce
+phase).  In some cases (although not in this particular example), such
+indeterminism is unacceptable, which is exactly why programmers often
+choose to perform their own local aggregation in the mappers.
+
+Second, in-mapper combining will typically be more efficient than
+using actual combiners.  One reason for this is the additional
+overhead associated with actually materializing the key-value pairs.
+Combiners reduce the amount of intermediate data that is shuffled
+across the network, but don't actually reduce the number of key-value
+pairs that are emitted by the mappers in the first place.  With the
+algorithm in Algorithm~\ref{algorithm:chapter3:word-count:inner-hash},
+intermediate key-value pairs are still generated on a per-document
+basis, only to be ``compacted'' by the combiners.  This process
+involves unnecessary object creation and destruction (garbage
+collection takes time), and furthermore, object serialization and
+deserialization (when intermediate key-value pairs fill the in-memory
+buffer holding map outputs and need to be temporarily spilled to
+disk). In contrast, with in-mapper combining, the mappers will
+generate only those key-value pairs that need to be shuffled across
+the network to the reducers.
+
+There are, however, drawbacks to the in-mapper combining pattern.
+First, it breaks the functional programming underpinnings of
+MapReduce, since state is being preserved across multiple input
+key-value pairs.  Ultimately, this isn't a big deal, since pragmatic
+concerns for efficiency often trump theoretical ``purity'', but there
+are practical consequences as well.  Preserving state across multiple
+input instances means that algorithmic behavior may depend on the
+order in which input key-value pairs are encountered.  This creates
+the potential for ordering-dependent bugs, which are difficult to
+debug on large datasets in the general case (although the correctness
+of in-mapper combining for word count is easy to demonstrate).
+Second, there is a fundamental scalability bottleneck associated with
+the in-mapper combining pattern.  It critically depends on having
+sufficient memory to store intermediate results until the mapper has
+completely processed all key-value pairs in an input split.  In the
+word count example, the memory footprint is bound by the vocabulary
+size, since it is theoretically possible that a mapper encounters
+every term in the collection.  Heap's Law, a well-known result in
+information retrieval, accurately models the growth of vocabulary size
+as a function of the collection size---the somewhat surprising fact is
+that the vocabulary size never stops growing.\footnote{In more detail,
+  Heap's Law relates the vocabulary size $V$ to the collection size as
+  follows:\ $V =kT^b$, where $T$ is the number of tokens in the
+  collection.  Typical values of the parameters $k$ and $b$ are:\ $30
+  \leq k \leq 100$ and $b \sim 0.5$~(\cite{Manning_etal_2008},
+  p.\ 81).}  Therefore, the algorithm in
+Algorithm~\ref{algorithm:chapter3:word-count:outer-hash} will scale only up
+to a point, beyond which the associative array holding the partial
+term counts will no longer fit in memory.\footnote{A few more
+  details:\ note what matters is that the partial term counts
+  encountered within particular \emph{input split} fits into memory.
+  However, as collection sizes increase, one will often want to
+  increase the input split size to limit the growth of the number of
+  map tasks (in order to reduce the number of distinct copy operations
+  necessary to shuffle intermediate data over the network).}
+
+One common solution to limiting memory usage when using the in-mapper
+combining technique is to ``block'' input key-value pairs and
+``flush'' in-memory data structures periodically.  The idea is
+simple:\ instead of emitting intermediate data only after \emph{every}
+key-value pair has been processed, emit partial results after
+processing every $n$ key-value pairs.  This is straightforwardly
+implemented with a counter variable that keeps track of the number of
+input key-value pairs that have been processed.  As an alternative,
+the mapper could keep track of its own memory footprint and flush
+intermediate key-value pairs once memory usage has crossed a certain
+threshold.  In both approaches, either the block size or the memory
+usage threshold needs to be determined empirically:\ with too large a
+value, the mapper may run out of memory, but with too small a value,
+opportunities for local aggregation may be lost.  Furthermore, in
+Hadoop physical memory is split between multiple tasks that may be
+running on a node concurrently; these tasks are all competing for
+finite resources, but since the tasks are not aware of each other, it
+is difficult to coordinate resource consumption effectively.  In
+practice, however, one often encounters diminishing returns in
+performance gains with increasing buffer sizes, such that it is not
+worth the effort to search for an \emph{optimal} buffer size (personal
+communication, Jeff Dean).
+
+In MapReduce algorithms, the extent to which efficiency can be
+increased through local aggregation depends on the size of the
+intermediate key space, the distribution of keys themselves, and the
+number of key-value pairs that are emitted by each individual map
+task.  Opportunities for aggregation, after all, come from having
+multiple values associated with the same key (whether one uses
+combiners or employs the in-mapper combining pattern).  In the word
+count example, local aggregation is effective because many words are
+encountered multiple times within a map task.  Local aggregation is
+also an effective technique for dealing with reduce stragglers (see
+Section~\ref{chapter2:execution-framework}) that result from a
+highly-skewed (e.g., Zipfian) distribution of values associated with
+intermediate keys.  In our word count example, we do not filter
+frequently-occurring words:\ therefore, without local aggregation, the
+reducer that's responsible for computing the count of `the' will
+have a lot more work to do than the typical reducer, and therefore
+will likely be a straggler.  With local aggregation (either combiners
+or in-mapper combining), we substantially reduce the number of values
+associated with frequently-occurring terms, which alleviates the
+reduce straggler problem.
+
+Although use of combiners can yield dramatic reductions in algorithm
+running time, care must be taken in applying them.  Since combiners in
+Hadoop are viewed as optional optimizations, the correctness of the
+algorithm cannot depend on computations performed by the combiner or
+depend on them even being run at all.  In any MapReduce program, the
+reducer input key-value type must match the mapper output key-value
+type:\ this implies that the combiner input \emph{and} output key-value
+types must match the mapper output key-value type (which is the same
+as the reducer input key-value type).  In cases where the reduce
+computation is both commutative and associative, the reducer can also
+be used (unmodified) as the combiner (as is the case with the word
+count example).  In the general case, however, combiners and reducers
+are not interchangeable.
+
+\begin{algorithm}[t]
+\caption{Compute the mean of values associated with the same key}
+\label{algorithm:chapter3:average}
+The mapper is the identify function; the mean is computed in the reducer.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Text, value: Int) = {
+    emit(key, value)
+  }
+}
+
+class Reducer {
+  def reduce(key: Text, values: Iterable[Int]) {
+    for (value <- values) {
+      sum += value
+      cnt += 1
+    }
+    emit(key, sum/cnt)
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+Consider a simple example:\ we have a large dataset where input keys
+are strings and input values are integers, and we wish to compute the
+mean of all integers associated with the same key (rounded to the
+nearest integer).  A real-world example might be a large user log from
+a popular website, where keys represent user ids and values represent
+some measure of activity such as elapsed time for a particular
+session---the task would correspond to computing the mean session
+length on a per-user basis, which would be useful for understanding
+user demographics.  Algorithm~\ref{algorithm:chapter3:average} shows the
+pseudo-code of a simple algorithm for accomplishing this task that
+does not involve combiners.  We use an identity mapper, which simply
+passes all input key-value pairs to the reducers (appropriately
+grouped and sorted).  The reducer keeps track of the running sum and
+the number of integers encountered.  This information is used to
+compute the mean once all values are processed.  The mean is then
+emitted as the output value in the reducer (with the input string as
+the key).
+
+This algorithm will indeed work, but suffers from the same drawbacks
+as the basic word count algorithm in
+Algorithm~\ref{algorithm:chapter3:word-count:basic}:\ it requires shuffling
+all key-value pairs from mappers to reducers across the network, which
+is highly inefficient.  Unlike in the word count example, the reducer
+cannot be used as a combiner in this case.  Consider what would happen
+if we did:\ the combiner would compute the mean of an arbitrary subset
+of values associated with the same key, and the reducer would compute
+the mean of those values.  As a concrete example, we know that:
+\begin{align}
+\textsc{Mean}(1, 2, 3, 4, 5) \ne \textsc{Mean}( \textsc{Mean}(1, 2), \textsc{Mean}(3, 4, 5))
+\end{align}
+
+\noindent In general, the mean of means of arbitrary subsets of a set
+of numbers is not the same as the mean of the set of numbers.
+Therefore, this approach would not produce the correct
+result.\footnote{There is, however, one special case in which using
+  reducers as combiners \emph{would} produce the correct result:\ if
+  each combiner computed the mean of equal-size subsets of the values.
+  However, since such fine-grained control over the combiners is
+  impossible in MapReduce, such a scenario is highly unlikely.}
+
+So how might we properly take advantage of combiners?  An attempt is
+shown in Algorithm~\ref{algorithm:chapter3:average-fail}.  The mapper
+remains the same, but we have added a combiner that partially
+aggregates results by computing the numeric components necessary to
+arrive at the mean.  The combiner receives each string and the
+associated list of integer values, from which it computes the sum of
+those values and the number of integers encountered (i.e., the count).
+The sum and count are packaged into a pair, and emitted as the output
+of the combiner, with the same string as the key.  In the reducer,
+pairs of partial sums and counts can be aggregated to arrive at the
+mean.  Up until now, all keys and values in our algorithms have been
+primitives (string, integers, etc.).  However, there are no
+prohibitions in MapReduce for more complex types,\footnote{In Hadoop,
+  either custom types or types defined using a library such as
+  Protocol Buffers, Thrift, or Avro.} and, in fact, this represents a
+key technique in MapReduce algorithm design that we introduced at the
+beginning of this chapter.  We will frequently encounter complex keys
+and values throughput the rest of this book.
+
+\begin{algorithm}[t]
+\caption{Compute the mean of values associated with the same key}
+\label{algorithm:chapter3:average-fail}
+Note that this algorithm is incorrect. The mismatch between
+combiner input and output key-value types violates the MapReduce
+programming model.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Text, value: Int) =
+    emit(key, value)
+}
+
+class Combiner {
+  def reduce(key: Text, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+      cnt += 1
+    }
+    emit(key, (sum, cnt))
+  }
+}
+
+class Reducer {
+  def reduce(key: Text, values: Iterable[Pair]) = {
+    for ((s, c) <- values) {
+      sum += s
+      cnt += c
+    }
+    emit(key, sum/cnt)
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+Unfortunately, this algorithm will not work.  Recall that combiners
+must have the same input and output key-value type, which also must be
+the same as the mapper output type and the reducer input type.  This
+is clearly not the case.  To understand why this restriction is
+necessary in the programming model, remember that combiners are
+optimizations that cannot change the correctness of the algorithm.  So
+let us remove the combiner and see what happens:\ the output value
+type of the mapper is integer, so the reducer expects to receive a
+list of integers as values.  But the reducer actually expects a list
+of pairs!  The correctness of the algorithm is contingent on the
+combiner running on the output of the mappers, and more specifically,
+that the combiner is run exactly once.  Recall from our previous
+discussion that Hadoop makes no guarantees on how many times combiners
+are called; it could be zero, one, or multiple times.  This violates
+the MapReduce programming model.
+
+Another stab at the solution is shown in
+Algorithm~\ref{algorithm:chapter3:average-efficient}, and this time, the
+algorithm is correct.  In the mapper we emit as the value a pair
+consisting of the integer and one---this corresponds to a partial
+count over one instance.  The combiner separately aggregates the
+partial sums and the partial counts (as before), and emits pairs with
+updated sums and counts.  The reducer is similar to the combiner,
+except that the mean is computed at the end.  In essence, this
+algorithm transforms a non-associative operation (mean of numbers)
+into an associative operation (element-wise sum of a pair of numbers,
+with an additional division at the very end).
+
+\begin{algorithm}[t]
+\caption{Compute the mean of values associated with the same key}
+\label{algorithm:chapter3:average-efficient}
+This algorithm correctly takes advantage of combiners by storing the
+sum and count separately as a pair.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Text, value: Int) =
+    emit(key, (value, 1))
+}
+
+class Combiner {
+  def reduce(key: Text, values: Iterable[Pair]) = {
+    for ((s, c) <- values) {
+      sum += s
+      cnt += c
+    }
+    emit(key, (sum, cnt))
+  }
+}
+
+class Reducer {
+  def reduce(key: Text, values: Iterable[Pair]) = {
+    for ((s, c) <- values) {
+      sum += s
+      cnt += c
+    }
+    emit(key, sum/cnt)
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+Let us verify the correctness of this algorithm by repeating the
+previous exercise:\ What would happen if no combiners were run?  With
+no combiners, the mappers would send pairs (as values) directly to the
+reducers.  There would be as many intermediate pairs as there were
+input key-value pairs, and each of those would consist of an integer
+and one.  The reducer would still arrive at the correct sum and count,
+and hence the mean would be correct.  Now add in the combiners:\ the
+algorithm would remain correct, no matter how many times they run,
+since the combiners merely aggregate partial sums and counts to pass
+along to the reducers.  Note that although the output key-value type
+of the combiner must be the same as the input key-value type of the
+reducer, the reducer can emit final key-value pairs of a different
+type.
+
+Finally, in Algorithm~\ref{algorithm:chapter3:average-more-efficient}, we
+present an even more efficient algorithm that exploits the in-mapper
+combining pattern.  Inside the mapper, the partial sums and counts
+associated with each string are held in memory across input key-value
+pairs.  Intermediate key-value pairs are emitted only after the entire
+input split has been processed; similar to before, the value is a pair
+consisting of the sum and count.  The reducer is exactly the same as
+in Algorithm~\ref{algorithm:chapter3:average-efficient}.  Moving partial
+aggregation from the combiner directly into the mapper is subjected to
+all the tradeoffs and caveats discussed earlier this section, but in
+this case the memory footprint of the data structures for holding
+intermediate data is likely to be modest, making this variant
+algorithm an attractive option.
+
+\begin{algorithm}[t]
+\caption{Compute the mean of values associated with the same key}
+\label{algorithm:chapter3:average-more-efficient}
+This mapper illustrates the in-mapper combining design pattern. The
+reducer is the same as in
+Algorithm~\ref{algorithm:chapter3:average-efficient}
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper  {
+  val sums = new Map()
+  val counts = new Map()
+
+  def map(key: Text, value: Int) = {
+    sums(key) += value
+    counts(key) += 1
+  }
+
+  def cleanup() = {
+    for (key <- counts.keys) {
+      emit(key, (sums(key), counts(key)))
+    }
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+\subsection{Pairs and Stripes}
+\label{chapter3:pairs-and-stripes}
+
+One common approach for synchronization in MapReduce is to construct
+complex keys and values in such a way that data necessary for a
+computation are naturally brought together by the execution framework.
+We first touched on this technique in the previous section, in the
+context of ``packaging'' partial sums and counts in a complex value
+(i.e., pair) that is passed from mapper to combiner to reducer.
+Building on previously published
+work~\cite{Dyer_etal_2008,Lin_EMNLP2008}, this section introduces two
+common design patterns we have dubbed ``pairs'' and ``stripes'' that
+exemplify this strategy.
+
+As a running example, we focus on the problem of building word
+co-occurrence matrices from large corpora, a common task in corpus
+linguistics and statistical natural language processing.  Formally,
+the co-occurrence matrix of a corpus is a square $n \times n$ matrix
+where $n$ is the number of unique words in the corpus
+(i.e., the vocabulary size).  A cell $m_{ij}$ contains the number of
+times word $w_i$ co-occurs with word $w_j$ within a specific
+context---a natural unit such as a sentence, paragraph, or a document,
+or a certain window of $m$ words (where $m$ is an
+application-dependent parameter).  Note that the upper and lower
+triangles of the matrix are identical since co-occurrence is a
+symmetric relation, though in the general case relations between words
+need not be symmetric.  For example, a co-occurrence matrix $M$ where
+$m_{ij}$ is the count of how many times word $i$ was immediately
+succeeded by word $j$ would usually not be symmetric.
+
+This task is quite common in text processing and provides the starting
+point to many other algorithms, e.g., for computing statistics such as
+pointwise mutual information~\cite{Church_Hanks_1990}, for
+unsupervised sense clustering~\cite{Schutze_CL1998}, and more
+generally, a large body of work in lexical semantics based on
+distributional profiles of words, dating back to
+Firth~\cite{Firth_1957} and Harris~\cite{Harris_1968} in the 1950s and
+1960s.  The task also has applications in information retrieval (e.g.,
+automatic thesaurus construction~\cite{Schutze_Pedersen_IPM1997} and
+stemming~\cite{Xu_Croft_TOIS1998}), and other related fields such as
+text mining.  More importantly, this problem represents a specific
+instance of the task of estimating distributions of discrete joint
+events from a large number of observations, a very common task in
+statistical natural language processing for which there are nice
+MapReduce solutions.  Indeed, concepts presented here are also used in
+Chapter~\ref{chapter6} when we discuss expectation-maximization
+algorithms.
+
+Beyond text processing, problems in many application domains share
+similar characteristics.  For example, a large retailer might analyze
+point-of-sale transaction records to identify correlated product
+purchases (e.g., customers who buy \emph{this} tend to also buy \emph{
+  that}), which would assist in inventory management and product
+placement on store shelves.  Similarly, an intelligence analyst might
+wish to identify associations between re-occurring financial
+transactions that are otherwise unrelated, which might provide a clue
+in thwarting terrorist activity.  The algorithms discussed in this
+section could be adapted to tackle these related problems.
+
+It is obvious that the space requirement for the word co-occurrence
+problem is $O(n^2)$, where $n$ is the size of the vocabulary, which
+for real-world English corpora can be hundreds of thousands of words,
+or even billions of words in web-scale collections.\footnote{The size
+  of the vocabulary depends on the definition of a ``word'' and
+  techniques (if any) for corpus pre-processing.  One common strategy
+  is to replace all rare words (below a certain frequency) with a
+  ``special'' token such as \texttt{$<$UNK$>$} (which stands for
+  ``unknown'') to model out-of-vocabulary words.  Another technique
+  involves replacing numeric digits with \texttt{\#}, such that 1.32 and
+  1.19 both map to the same token (\texttt{\#.\#\#}).}  The computation
+of the word co-occurrence matrix is quite simple if the entire matrix
+fits into memory---however, in the case where the matrix is too big to
+fit in memory, a na\"{i}ve implementation on a single machine can be
+very slow as memory is paged to disk.  Although compression techniques
+can increase the size of corpora for which word co-occurrence matrices
+can be constructed on a single machine, it is clear that there are
+inherent scalability limitations.  We describe two MapReduce
+algorithms for this task that can scale to large corpora.
+
+Pseudo-code for the first algorithm, dubbed the ``pairs'' approach, is
+shown in Algorithm~\ref{algorithm:chapter3:coocur:pairs}.  As usual,
+document ids and the corresponding contents make up the input
+key-value pairs.  The mapper processes each input document and emits
+intermediate key-value pairs with each co-occurring word pair as the
+key and the integer one (i.e., the count) as the value.  This is
+straightforwardly accomplished by two nested loops:\ the outer loop
+iterates over all words (the left element in the pair), and the inner
+loop iterates over all neighbors of the first word (the right element
+in the pair).  The neighbors of a word can either be defined in terms
+of a sliding window or some other contextual unit such as a sentence.
+The MapReduce execution framework guarantees that all values
+associated with the same key are brought together in the reducer.
+Thus, in this case the reducer simply sums up all the values
+associated with the same co-occurring word pair to arrive at the
+absolute count of the joint event in the corpus, which is then emitted
+as the final key-value pair. Each pair corresponds to a cell in the
+word co-occurrence matrix.  This algorithm illustrates the use of
+complex keys in order to coordinate distributed computations.
+
+\begin{algorithm}[p]
+\caption{Compute word co-occurrence (``pairs'' approach)}
+\label{algorithm:chapter3:coocur:pairs}
+With ``pairs'', each co-occurring pair of words is counted separately.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (u <- tokenize(value)) {
+      for (v <- neighbors(u)) {
+        emit((u, v), 1)
+      }
+    }
+  }
+}
+
+class Reducer {
+  def reduce(key: Pair, values: Iterable[Int]) = {
+    for (value <- values) {
+      sum += value
+    }
+    emit(key, sum)
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+\begin{algorithm}[p]
+\caption{Compute word co-occurrence (``stripes'' approach)}
+\label{algorithm:chapter3:coocur:stripes}
+With ``stripes'', all words co-occurring with a word are counted
+together.
+\begin{small}
+\begin{Verbatim}[numbers=left, xleftmargin=7.5mm]
+class Mapper {
+  def map(key: Long, value: Text) = {
+    for (u <- tokenize(value)) {
+      val map = new Map()
+      for (v <- neighbors(u)) {
+        map(v) += 1
+      }
+      emit(u, map)
+    }
+  }
+}
+
+class Reducer {
+  def reduce(key: Text, values: Iterable[Map]) = {
+    val map = new Map()
+    for (value <- values) {
+      map += value
+    }
+    emit(key, map)
+  }
+}
+\end{Verbatim}
+\end{small}
+\end{algorithm}
+
+%\afterpage{\clearpage}
+
+An alternative approach, dubbed the ``stripes'' approach, is presented
+in Algorithm~\ref{algorithm:chapter3:coocur:stripes}.  Like the pairs
+approach, co-occurring word pairs are generated by two nested loops.
+However, the major difference is that instead of emitting intermediate
+key-value pairs for each co-occurring word pair, co-occurrence
+information is first stored in an associative array, denoted $H$.  The
+mapper emits key-value pairs with words as keys and corresponding
+associative arrays as values, where each associative array encodes the
+co-occurrence counts of the neighbors of a particular word (i.e., its
+context).  The MapReduce execution framework guarantees that all
+associative arrays with the same key will be brought together in the
+reduce phase of processing.  The reducer performs an element-wise sum
+of all associative arrays with the same key, accumulating counts that
+correspond to the same cell in the co-occurrence matrix.  The final
+associative array is emitted with the same word as the key.  In
+contrast to the pairs approach, each final key-value pair encodes a
+row in the co-occurrence matrix.
+
+It is immediately obvious that the pairs algorithm generates an
+immense number of key-value pairs compared to the stripes approach.
+The stripes representation is much more compact, since with pairs the
+left element is repeated for every co-occurring word pair.  The
+stripes approach also generates fewer and shorter intermediate keys,
+and therefore the execution framework has less sorting to perform.
+However, values in the stripes approach are more complex, and come
+with more serialization and deserialization overhead than with the
+pairs approach.
+
+Both algorithms can benefit from the use of combiners, since the
+respective operations in their reducers (addition and element-wise sum
+of associative arrays) are both commutative and associative.  However,
+combiners with the stripes approach have more opportunities to perform
+local aggregation because the key space is the
+vocabulary---associative arrays can be merged whenever a word is
+encountered multiple times by a mapper.  In contrast, the key space in
+the pairs approach is the cross of the vocabulary with itself, which
+is far larger---counts can be aggregated only when the same
+co-occurring word pair is observed multiple times by an individual
+mapper (which is less likely than observing multiple occurrences of a
+word, as in the stripes case).
+
+For both algorithms, the in-mapper combining optimization discussed in
+the previous section can also be applied; the modification is
+sufficiently straightforward that we leave the implementation as an
+exercise for the reader.  However, the above caveats remain:\ there
+will be far fewer opportunities for partial aggregation in the pairs
+approach due to the sparsity of the intermediate key space.  The
+sparsity of the key space also limits the effectiveness of in-memory
+combining, since the mapper may run out of memory to store partial
+counts before all documents are processed, necessitating some
+mechanism to periodically emit key-value pairs (which further limits
+opportunities to perform partial aggregation).  Similarly, for the
+stripes approach, memory management will also be more complex than in
+the simple word count example.  For common terms, the associative
+array may grow to be quite large, necessitating some mechanism to
+periodically flush in-memory structures.
+
+It is important to consider potential scalability bottlenecks of
+either algorithm.  The stripes approach makes the assumption that, at
+any point in time, each associative array is small enough to fit into
+memory---otherwise, memory paging will significantly impact
+performance.  The size of the associative array is bounded by the
+vocabulary size, which is itself unbounded with respect to corpus size
+(recall the previous discussion of Heap's Law).  Therefore, as the
+sizes of corpora increase, this will become an increasingly pressing
+issue---perhaps not for gigabyte-sized corpora, but certainly for
+terabyte-sized and petabyte-sized corpora that will be commonplace
+tomorrow.  The pairs approach, on the other hand, does not suffer from
+this limitation, since it does not need to hold intermediate data in
+memory.
+
+Given this discussion, which approach is faster?  Here, we present
+previously-published results~\cite{Lin_EMNLP2008} that empirically
+answered this question.  We have implemented both algorithms in Hadoop
+and applied them to a corpus of 2.27 million documents from the
+Associated Press Worldstream (APW) totaling 5.7 GB.\footnote{This was
+  a subset of the English Gigaword corpus (version 3) distributed by
+  the Linguistic Data Consortium (LDC catalog number LDC2007T07).}
+Prior to working with Hadoop, the corpus was first preprocessed as
+follows: All XML markup was removed, followed by tokenization and
+stopword removal using standard tools from the Lucene search engine.
+All tokens were then replaced with unique integers for a more
+efficient encoding.  Figure~\ref{figure:chapter3:pairs-vs-stripes}
+compares the running time of the pairs and stripes approach on
+different fractions of the corpus, with a co-occurrence window size of
+two.  These experiments were performed on a Hadoop cluster with 19
+slave nodes, each with two single-core processors and two disks.
+
+Results demonstrate that the stripes approach is much faster than the
+pairs approach:\ 666 seconds ($\sim$11 minutes) compared to 3758
+seconds ($\sim$62 minutes) for the entire corpus (improvement by a
+factor of 5.7).  The mappers in the pairs approach generated 2.6
+billion intermediate key-value pairs totaling 31.2 GB.  After the
+combiners, this was reduced to 1.1 billion key-value pairs, which
+quantifies the amount of intermediate data transferred across the
+network.  In the end, the reducers emitted a total of 142 million
+final key-value pairs (the number of non-zero cells in the
+co-occurrence matrix).  On the other hand, the mappers in the stripes
+approach generated 653 million intermediate key-value pairs totaling
+48.1 GB.  After the combiners, only 28.8 million key-value pairs
+remained.  The reducers emitted a total of 1.69 million final
+key-value pairs (the number of rows in the co-occurrence matrix).  As
+expected, the stripes approach provided more opportunities for
+combiners to aggregate intermediate results, thus greatly reducing
+network traffic in the shuffle and sort phase.
+Figure~\ref{figure:chapter3:pairs-vs-stripes} also shows that both
+algorithms exhibit highly desirable scaling characteristics---linear
+in the amount of input data.  This is confirmed by a linear regression
+applied to the running time data, which yields an $R^2$ value close to
+one.
+
+\begin{figure}[t]
+\begin{center}
+\includegraphics[scale=0.6]{figures/fig-ch3-pairs-vs-stripes.pdf}
+\end{center}
+\caption{Running time of the ``pairs'' and ``stripes'' algorithms for
+  computing word co-occurrence matrices on different fractions of the
+  APW corpus.  These experiments were performed on a Hadoop cluster
+  with 19 slaves, each with two single-core processors and two disks.}
+\label{figure:chapter3:pairs-vs-stripes}
+\end{figure}
+
+\begin{figure}[t]
+\begin{center}
+\includegraphics[scale=0.45]{figures/fig-ch3-pairs-vs-stripes-ec2a.pdf}
+\includegraphics[scale=0.45]{figures/fig-ch3-pairs-vs-stripes-ec2b.pdf}
+\end{center}
+\caption{Running time of the stripes algorithm on the APW corpus with
+  Hadoop clusters of different sizes from EC2 (left).  Scaling
+  characteristics (relative speedup) in terms of increasing Hadoop
+  cluster size (right).}
+\label{figure:chapter3:pairs-vs-stripes-ec2}
+\end{figure}
+
+An additional series of experiments explored the scalability of the
+stripes approach along another dimension:\ the size of the cluster.
+These experiments were made possible by Amazon's EC2 service, which
+allows users to rapidly provision clusters of varying sizes for
+limited durations (for more information, refer back to our discussion
+of utility computing in Section~\ref{chapter1:clouds}).  Virtualized
+computational units in EC2 are called instances, and the user is
+charged only for the instance-hours consumed.
+Figure~\ref{figure:chapter3:pairs-vs-stripes-ec2} (left) shows the
+running time of the stripes algorithm (on the same corpus, with same
+setup as before), on varying cluster sizes, from 20 slave ``small''
+instances all the way up to 80 slave ``small'' instances (along the
+\emph{x}-axis).  Running times are shown with solid squares.
+Figure~\ref{figure:chapter3:pairs-vs-stripes-ec2} (right) recasts the
+same results to illustrate scaling characteristics.  The circles plot
+the relative size and speedup of the EC2 experiments, with respect to
+the 20-instance cluster.  These results show highly desirable linear
+scaling characteristics (i.e., doubling the cluster size makes the job
+twice as fast).  This is confirmed by a linear regression with an
+$R^2$ value close to one.
+
+Viewed abstractly, the pairs and stripes algorithms represent two
+different approaches to counting co-occurring events from a large
+number of observations.  This general description captures the gist of
+many algorithms in fields as diverse as text processing, data mining,
+and bioinformatics.  For this reason, these two design patterns are
+broadly useful and frequently observed in a variety of applications.
+
+To conclude, it is worth noting that the pairs and stripes approaches
+represent endpoints along a continuum of possibilities.  The pairs
+approach individually records \emph{each} co-occurring event, while the
+stripes approach records \emph{all} co-occurring events with respect a
+conditioning event.  A middle ground might be to record a subset of
+the co-occurring events with respect to a conditioning event.  We
+might divide up the entire vocabulary into $b$ buckets (e.g., via
+hashing), so that words co-occurring with $w_i$ would be divided into
+$b$ smaller ``sub-stripes'', associated with ten separate keys,
+$(w_i,1), (w_i,2) \ldots (w_i,b)$.  This would be a reasonable
+solution to the memory limitations of the stripes approach, since each
+of the sub-stripes would be smaller.  In the case of $b=|V|$, where
+$|V|$ is the vocabulary size, this is equivalent to the pairs
+approach.  In the case of $b=1$, this is equivalent to the standard
+stripes approach.
+
+\subsection{Order Inversion}
+\label{chapter3:cond-prob}
+
+Let us build on the pairs and stripes algorithms presented in the
+previous section and continue with our running example of constructing
+the word co-occurrence matrix $M$ for a large corpus.  Recall that in
+this large square $n \times n$ matrix, where $n=|V|$ (the vocabulary
+size), cell $m_{ij}$ contains the number of times word $w_i$ co-occurs
+with word $w_j$ within a specific context.  The drawback of absolute
+counts is that it doesn't take into account the fact that some words
+appear more frequently than others.  Word $w_i$ may co-occur
+frequently with $w_j$ simply because one of the words is very common.
+A simple remedy is to convert absolute counts into relative
+frequencies, $f(w_j|w_i)$.  That is, what proportion of the time does
+$w_j$ appear in the context of $w_i$?  This can be computed using the
+following equation:
+\begin{align}
+f(w_j|w_i) = \frac{N(w_i,w_j)}{\sum_{w'}{N(w_i,w')}}
+\end{align}
+
+\noindent Here, $N(\cdot, \cdot)$ indicates the number of times a
+particular co-occurring word pair is observed in the corpus.  We need
+the count of the joint event (word co-occurrence), divided by what is
+known as the marginal (the sum of the counts of the conditioning
+variable co-occurring with anything else).
+
+Computing relative frequencies with the stripes approach is
+straightforward.  In the reducer, counts of all words that co-occur
+with the conditioning variable ($w_i$ in the above example) are
+available in the associative array.  Therefore, it suffices to sum all
+those counts to arrive at the marginal (i.e., $\sum_{w'}{N(w_i,w')}$),
+and then divide all the joint counts by the marginal to arrive at the
+relative frequency for all words.  This implementation requires
+minimal modification to the original stripes algorithm in
+Algorithm~\ref{algorithm:chapter3:coocur:stripes}, and illustrates the use
+of complex data structures to coordinate distributed computations in
+MapReduce.  Through appropriate structuring of keys and values, one
+can use the MapReduce execution framework to bring together all the
+pieces of data required to perform a computation.  Note that, as with
+before, this algorithm also assumes that each associative array fits
+into memory.
+
+How might one compute relative frequencies with the pairs approach?
+In the pairs approach, the reducer receives $(w_i, w_j)$ as the key and
+the count as the value.  From this alone it is not possible to compute
+$f(w_j|w_i)$ since we do not have the marginal.  Fortunately, as in the
+mapper, the reducer can preserve state across multiple keys.  Inside
+the reducer, we can buffer in memory all the words that co-occur with
+$w_i$ and their counts, in essence building the associative array in the
+stripes approach.  To make this work, we must define the sort order of
+the pair so that keys are first sorted by the left word, and then by
+the right word.  Given this ordering, we can easily detect if all
+pairs associated with the word we are conditioning on ($w_i$) have been
+encountered.  At that point we can go back through the in-memory
+buffer, compute the relative frequencies, and then emit those results
+in the final key-value pairs.
+
+There is one more modification necessary to make this algorithm work.
+We must ensure that all pairs with the same left word are sent to the
+same reducer.  This, unfortunately, does not happen
+automatically:\ recall that the default partitioner is based on the
+hash value of the intermediate key, modulo the number of reducers.
+For a complex key, the raw byte representation is used to compute the
+hash value.  As a result, there is no guarantee that, for example,
+(dog, aardvark) and (dog, zebra) are assigned to the same reducer.  To
+produce the desired behavior, we must define a custom partitioner that
+only pays attention to the left word.  That is, the partitioner should
+partition based on the hash of the left word only.
+
+This algorithm will indeed work, but it suffers from the same drawback
+as the stripes approach:\ as the size of the corpus grows, so does
+that vocabulary size, and at some point there will not be sufficient
+memory to store all co-occurring words and their counts for the word
+we are conditioning on.  For computing the co-occurrence matrix, the
+advantage of the pairs approach is that it doesn't suffer from any
+memory bottlenecks.  Is there a way to modify the basic pairs approach
+so that this advantage is retained?
+
+As it turns out, such an algorithm is indeed possible, although it
+requires the coordination of several mechanisms in MapReduce.  The
+insight lies in properly sequencing data presented to the reducer.  If
+it were possible to somehow compute (or otherwise obtain access to)
+the marginal in the reducer before processing the joint counts, the
+reducer could simply divide the joint counts by the marginal to
+compute the relative frequencies.  The notion of ``before'' and
+``after'' can be captured in the ordering of key-value pairs, which
+can be explicitly controlled by the programmer.  That is, the
+programmer can define the sort order of keys so that data needed
+earlier is presented to the reducer before data that is needed later.
+However, we still need to compute the marginal counts.  Recall that in
+the basic pairs algorithm, each mapper emits a key-value pair with the
+co-occurring word pair as the key.  To compute relative frequencies,
+we modify the mapper so that it additionally emits a ``special'' key
+of the form $(w_i, \ast)$, with a value of one, that represents the
+contribution of the word pair to the marginal.  Through use of
+combiners, these partial marginal counts will be aggregated before
+being sent to the reducers.  Alternatively, the in-mapper combining
+pattern can be used to even more efficiently aggregate marginal
+counts.
+
+In the reducer, we must make sure that the special key-value pairs
+representing the partial marginal contributions are processed before
+the normal key-value pairs representing the joint counts.  This is
+accomplished by defining the sort order of the keys so that pairs with
+the special symbol of the form $(w_i, \ast)$ are ordered before any other
+key-value pairs where the left word is $w_i$.  In addition, as with
+before we must also properly define the partitioner to pay attention
+to only the left word in each pair.  With the data properly sequenced,
+the reducer can directly compute the relative frequencies.
+
+\begin{figure}[t]
+\begin{tabular}{lll}
+\textbf{key} & \textbf{values} &  \\
+$(\textrm{dog}, \ast)$        & $[$6327, 8514, $\ldots$$]$ & compute marginal: \\
+ & & $\sum_{w'}{N(\textrm{dog},w')} = 42908$\\
+$(\textrm{dog}, \textrm{aardvark})$ & $[$2,1$]$    & $f(\textrm{aardvark}|\textrm{dog}) = 3/42908$ \\
+$(\textrm{dog}, \textrm{aardwolf})$ & $[$1$]$      & $f(\textrm{aardwolf}|\textrm{dog}) = 1/42908$ \\
+\ldots            &      & \\
+$(\textrm{dog}, \textrm{zebra})$    & $[$2,1,1,1$]$    & $f(\textrm{zebra}|\textrm{dog}) = 5/42908$ \\
+$(\textrm{doge}, \ast)$       & $[$682, $\ldots$$]$  & compute marginal: \\
+&& $\sum_{w'}{N(\textrm{doge},w')} = 1267$\\
+\ldots            &      & \\
+\end{tabular}
+\caption{Example of the sequence of key-value pairs presented to the
+  reducer in the pairs algorithm for computing relative frequencies.
+  This illustrates the application of the order inversion design
+  pattern.}
+\label{figure:chapter3:cond-prob-reducer}
+\end{figure}
+
+A concrete example is shown in
+Figure~\ref{figure:chapter3:cond-prob-reducer}, which lists the
+sequence of key-value pairs that a reducer might encounter.  First,
+the reducer is presented with the special key $(\textrm{dog}, \ast)$
+and a number of values, each of which represents a partial marginal
+contribution from the map phase (assume here either combiners or
+in-mapper combining, so the values represent partially aggregated
+counts).  The reducer accumulates these counts to arrive at the
+marginal, $\sum_{w'}{N(\textrm{dog},w')}$.  The reducer holds on to
+this value as it processes subsequent keys.  After $(\textrm{dog},
+\ast)$, the reducer will encounter a series of keys representing joint
+counts; let's say the first of these is the key $(\textrm{dog},
+\textrm{aardvark})$.  Associated with this key will be a list of
+values representing partial joint counts from the map phase (two
+separate values in this case).  Summing these counts will yield the
+final joint count, i.e., the number of times dog and aardvark co-occur
+in the entire collection.  At this point, since the reducer already
+knows the marginal, simple arithmetic suffices to compute the relative
+frequency.  All subsequent joint counts are processed in exactly the
+same manner.  When the reducer encounters the next special key-value
+pair $(\textrm{doge}, \ast)$, the reducer resets its internal state
+and starts to accumulate the marginal all over again.  Observe that
+the memory requirement for this algorithm is minimal, since only the
+marginal (an integer) needs to be stored.  No buffering of individual
+co-occurring word counts is necessary, and therefore we have
+eliminated the scalability bottleneck of the previous algorithm.
+
+This design pattern, which we call ``order inversion'', occurs
+surprisingly often and across applications in many domains.  It is so
+named because through proper coordination, we can access the result of
+a computation in the reducer (for example, an aggregate statistic)
+before processing the data needed for that computation.  The key
+insight is to convert the sequencing of computations into a sorting
+problem.  In most cases, an algorithm requires data in some fixed
+order:\ by controlling how keys are sorted and how the key space is
+partitioned, we can present data to the reducer in the order necessary
+to perform the proper computations.  This greatly cuts down on the
+amount of partial results that the reducer needs to hold in memory.
+
+To summarize, the specific application of the order inversion design
+pattern for computing relative frequencies requires the
+following:
+
+\begin{itemize}
+
+\item Emitting a special key-value pair for each co-occurring word
+  pair in the mapper to capture its contribution to the marginal.
+
+\item Controlling the sort order of the intermediate key so that the
+  key-value pairs representing the marginal contributions are
+  processed by the reducer before any of the pairs representing the
+  joint word co-occurrence counts.
+
+\item Defining a custom partitioner to ensure that all pairs with the
+  same left word are shuffled to the same reducer.
+
+\item Preserving state across multiple keys in the reducer to first
+  compute the marginal based on the special key-value pairs and then
+  dividing the joint counts by the marginals to arrive at the
+  relative frequencies.
+
+\end{itemize}
+
+\noindent As we will see in Chapter~\ref{chapter-indexing}, this design
+pattern is also used in inverted index construction to properly set
+compression parameters for postings lists.
+
+\subsection{Secondary Sorting}
+\label{chapter3:secondary-sorting}
+
+MapReduce sorts intermediate key-value pairs by the keys during the
+shuffle and sort phase, which is very convenient if computations
+inside the reducer rely on sort order (e.g., the order inversion
+design pattern described in the previous section).  However, what if
+in addition to sorting by key, we also need to sort by value?
+Google's MapReduce implementation provides built-in functionality for
+(optional) secondary sorting, which guarantees that values arrive in
+sorted order.  Hadoop, unfortunately, does not have this capability
+built in.
+
+Consider the example of sensor data from a scientific
+experiment:\ there are $m$ sensors each taking readings on continuous
+basis, where $m$ is potentially a large number.  A dump of the sensor
+data might look something like the following, where $r_x$ after
+each timestamp represents the actual sensor readings (unimportant for
+this discussion, but may be a series of values, one or more complex
+records, or even raw bytes of images).
+
+\begin{quote}
+$(t_1, m_1, r_{80521})$\\
+$(t_1, m_2, r_{14209})$\\
+$(t_1, m_3, r_{76042})$\\
+$...$\\
+$(t_2, m_1, r_{21823})$\\
+$(t_2, m_2, r_{66508})$\\
+$(t_2, m_3, r_{98347})$
+\end{quote}
+
+\noindent Suppose we wish to reconstruct the activity at each
+individual sensor over time.  A MapReduce program to accomplish this
+might map over the raw data and emit the sensor id as the intermediate
+key, with the rest of each record as the value:
+
+\begin{quote}
+$m_1 \rightarrow (t_1, r_{80521})$
+\end{quote}
+
+\noindent This would bring all readings from the same sensor together
+in the reducer.  However, since MapReduce makes no guarantees about
+the ordering of values associated with the same key, the sensor
+readings will not likely be in temporal order.  The most obvious
+solution is to buffer all the readings in memory and then sort by
+timestamp before additional processing.  However, it should be
+apparent by now that any in-memory buffering of data introduces a
+potential scalability bottleneck.  What if we are working with a high
+frequency sensor or sensor readings over a long period of time?  What
+if the sensor readings themselves are large complex objects?  This
+approach may not scale in these cases---the reducer would run out of
+memory trying to buffer all values associated with the same key.
+
+This is a common problem, since in many applications we wish to first
+group together data one way (e.g., by sensor id), and then sort within
+the groupings another way (e.g., by time).  Fortunately, there is a
+general purpose solution, which we call the ``value-to-key
+conversion'' design pattern.  The basic idea is to move part of the
+value into the intermediate key to form a composite key, and let the
+MapReduce execution framework handle the sorting.  In the above
+example, instead of emitting the sensor id as the key, we would emit
+the sensor id and the timestamp as a composite key:
+
+\begin{quote}
+$(m_1, t_1) \rightarrow (r_{80521})$
+\end{quote}
+
+\noindent The sensor reading itself now occupies the value.  We must
+define the intermediate key sort order to first sort by the sensor id
+(the left element in the pair) and then by the timestamp (the right
+element in the pair).  We must also implement a custom partitioner so
+that all pairs associated with the same sensor are shuffled to the
+same reducer.
+
+Properly orchestrated, the key-value pairs will be presented to the
+reducer in the correct sorted order:
+
+\begin{quote}
+$(m_1, t_1) \rightarrow [(r_{80521})]$ \\
+$(m_1, t_2) \rightarrow [(r_{21823})]$ \\
+$(m_1, t_3) \rightarrow [(r_{146925})]$ \\
+$\ldots$
+\end{quote}
+
+\noindent However, note that sensor readings are now split across
+multiple keys.  The reducer will need to preserve state and keep track
+of when readings associated with the current sensor end and the next
+sensor begin.\footnote{Alternatively, Hadoop provides API hooks to
+  define ``groups'' of intermediate keys that should be processed
+  together in the reducer.}
+
+The basic tradeoff between the two approaches discussed above (buffer
+and in-memory sort vs.\ value-to-key conversion) is where sorting is
+performed.  One can explicitly implement secondary sorting in the
+reducer, which is likely to be faster but suffers from a scalability
+bottleneck.\footnote{Note that, in principle, this need not be an
+  in-memory sort.  It is entirely possible to implement a disk-based
+  sort within the reducer, although one would be duplicating
+  functionality that is already present in the MapReduce execution
+  framework.  It makes more sense to take advantage of functionality
+  that is already present with value-to-key conversion.}  With
+value-to-key conversion, sorting is offloaded to the MapReduce
+execution framework.  Note that this approach can be arbitrarily
+extended to tertiary, quaternary, etc.\ sorting.  This pattern results
+in many more keys for the framework to sort, but distributed sorting
+is a task that the MapReduce runtime excels at since it lies at the
+heart of the programming model.
+
+\section{Summary}
+
+This chapter provides a guide on the design of MapReduce algorithms.
+In particular, we present a number of ``design patterns'' that capture
+effective solutions to common problems.  In summary, they are:
+
+\begin{itemize}
+
+\item ``In-mapper combining'', where the functionality of the combiner
+  is moved into the mapper.  Instead of emitting intermediate output
+  for every input key-value pair, the mapper aggregates partial
+  results across multiple input records and only emits intermediate
+  key-value pairs after some amount of local aggregation is performed.
+
+\item The related patterns ``pairs'' and ``stripes'' for keeping track
+  of joint events from a large number of observations.  In the pairs
+  approach, we keep track of each joint event separately, whereas in
+  the stripes approach we keep track of all events that co-occur with
+  the same event.  Although the stripes approach is significantly more
+  efficient, it requires memory on the order of the size of the event
+  space, which presents a scalability bottleneck.
+
+\item ``Order inversion'', where the main idea is to convert the
+  sequencing of computations into a sorting problem.  Through careful
+  orchestration, we can send the reducer the result of a computation
+  (e.g., an aggregate statistic) before it encounters the data
+  necessary to produce that computation.
+
+\item ``Value-to-key conversion'', which provides a scalable solution
+  for secondary sorting.  By moving part of the value into the key, we
+  can exploit the MapReduce execution framework itself for sorting.
+
+\end{itemize}
+
+\noindent Ultimately, controlling synchronization in the MapReduce
+programming model boils down to effective use of the following
+techniques:
+
+\begin{enumerate}
+
+\item Constructing complex keys and values that bring together data
+  necessary for a computation.  This is used in all of the above
+  design patterns.
+
+\item Executing user-specified initialization and termination code in
+  either the mapper or reducer.  For example, in-mapper combining
+  depends on emission of intermediate key-value pairs in the map task
+  termination code.
+
+\item Preserving state across multiple inputs in the mapper and
+  reducer.  This is used in in-mapper combining, order inversion, and
+  value-to-key conversion.
+
+\item Controlling the sort order of intermediate keys.  This is used
+  in order inversion and value-to-key conversion.
+
+\item Controlling the partitioning of the intermediate key space.
+  This is used in order inversion and value-to-key conversion.
+
+\end{enumerate}
+
+\noindent This concludes our overview of MapReduce algorithm design.
+It should be clear by now that although the programming model forces
+one to express algorithms in terms of a small set of rigidly-defined
+components, there are many tools at one's disposal to shape the flow
+of computation.  In the next few chapters, we will focus on specific
+classes of MapReduce algorithms:\ for inverted indexing in
+Chapter~\ref{chapter-indexing}, for graph processing in
+Chapter~\ref{chapter-graphs}, and for expectation-maximization in
+Chapter~\ref{chapter6}.
+
+
+\bibliographystyle{plain}
+\bibliography{MapReduce-algorithms}
+
+\end{document}
