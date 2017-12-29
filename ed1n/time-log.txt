@@ -1,0 +1,4 @@
+12/25/2017	1h	initial conception of new chapter structure
+12/26/2017	2h	start of from-fp-to-mr
+12/27/2017	1.5h	work on from-fp-to-mr
+

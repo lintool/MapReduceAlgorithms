@@ -43,29 +43,89 @@ University of Waterloo\\[0.5ex]
 \section{Divide and Conquer}
 \label{chapter2}
 
-\noindent The only feasible approach to tackling large-data problems today is toy
+\noindent 
+Short of revolutionary advances in computing paradigms such as quantum
+or biological computing, the only feasible approach to tackling
+data-intensive problems today with the von Neumann architecture is to
 divide and conquer, a fundamental concept in computer science that is
-introduced very early in typical undergraduate curricula.  The basic
-idea is to partition a large problem into smaller sub-problems.  To
-the extent that the sub-problems are independent~\cite{Amdahl_1967},
-they can be tackled in parallel by different workers---threads in a
-processor core, cores in a multi-core processor, multiple processors
-in a machine, or many machines in a cluster.  Intermediate results
-from each individual worker are then combined to yield the final
-output.\footnote{We note that promising technologies such as quantum
-or biological computing could potentially induce a paradigm shift, but
-they are far from being sufficiently mature to solve real world
-problems.}
+introduced very early in typical undergraduate curricula. The basic
+idea is to partition a large problem into smaller sub-problems. To the
+extent that the sub-problems are independent, they can be tackled in
+parallel by different workers~\cite{Amdahl_1967}; these can be threads
+in a processor core, cores in a multi-core processor, multiple
+processors in a machine, or multiple machines in a cluster. Outputs
+from each individual worker are then integrated to produce the final
+results.
 
-The general principles behind divide-and-conquer algorithms are
-broadly applicable to a wide range of problems in many different
-application domains.  However, the details of their implementations
-are varied and complex.  For example, the following are just some of
-the issues that need to be addressed:
+\begin{figure}[t]
+\begin{center}
+\includegraphics[scale=0.5]{figures/fig-ch2-functional-programming.pdf}
+\end{center}
+\caption{Illustration of a divide-and-conquer approach to
+  data-intensive distributed processing.}
+\label{from-fp-to-mr:divide-and-conquer}
+\end{figure}
+
+An abstract illustration of a divide-and-conquer approach to
+data-intensive distributed processing is shown in
+Figure~\ref{from-fp-to-mr:divide-and-conquer}. Since by definition we
+are interested in processing a large number of input records
+(documents, images, etc.), it makes sense to focus on \textit{data
+  parallelism}, where we partition the input records and assign each
+partition to a worker to process. Unless our problem is
+\textit{embarrassingly parallel}, where there are no dependencies
+between the processing of each record (for example, resizing a large
+collection of images), the workers must exchange partial results
+during the course of processing (shown by the dotting lines in
+Figure~\ref{from-fp-to-mr:divide-and-conquer}). In other words,
+communication between workers is unavoidable.
+
+Two useful concepts for understanding the design of data-intensive
+distributed algorithms is the distinction between the logical and
+physical levels:\ the logical level describes the structure of the
+computation at some level of abstraction, whereas the physical level
+is concerned specific implementations. For example, \textsc{Sort} is a
+logical operator, which defines how a collection of records is to be
+ordered, whereas \textsc{Quicksort} is a physical operator, which
+specifies a particular implementation of how records are sorted. At
+the logical level, we might describe data in terms of schemas, e.g., a
+collection of (name, title, salary) tuples; the physical
+representation of the data, however, might be very different, e.g., we
+might adopt a columnar representation, apply run-length encoding to
+compression values, etc.
+
+Often, it is useful to discuss the logical operators that define a
+particular computation as distinct from physical operators that
+realize the computation. This is exactly what happens in the
+relational database---SQL is translated into a logical plan and then
+into a physical plan in distinct stages, with optimizations that apply
+at each stage. The logical and physical represent two different levels
+of abstractions, and as all abstractions ``leak'' to some degree,
+sometimes the two levels becomes intertwined and discussions conflate
+operations at different levels. MapReduce is particularly guilty of
+these abstraction violations, as we will see:\ there are many cases in
+which an algorithm depend on a specific implementation of the
+execution framework.
+
+In applying a divide-and-conquer approach to data-intensive
+distributed processing, there are a number of issues that need to be
+addressed:
 
 \begin{itemize}
 
-\item How do we break up a large problem into smaller tasks?  
+\item How do we partition the input records? We can logically
+  partition to exploit semantic structures within a dataset (e.g., web
+  pages from the same domain are likely to contain similar words). At
+  the physical level, there are few common approaches to
+  partitioning---for example, records can be hash partitioned (where
+  consecutive records may be hashed to different ``buckets'') or range
+  partitioned (where consecutive sequences of records belong to the
+  same ``bucket'').
+
+\item How do we assign partitions of the input records to workers
+  distributed across a cluster?
+
+How do we break up a large problem into smaller tasks?  
   More specifically, how do we decompose the problem so that the
   smaller tasks can be executed in parallel?
 
@@ -86,6 +146,8 @@ the issues that need to be addressed:
   errors and hardware faults?
 
 \end{itemize}
+
+\todo{Discuss fine vs.\ coarse-grained parallelism.}
 
 In traditional parallel or distributed programming environments, the
 developer needs to explicitly address many (and sometimes, all) of the
@@ -153,31 +215,97 @@ with a summary.
 \section{Functional Programming}
 \label{chapter2:functional}
 
-MapReduce has its roots in functional programming, which is
-exemplified in languages such as Lisp and ML.\footnote{However, there
-are important characteristics of MapReduce that make it non-functional
-in nature---this will become apparent later.} A key feature of
-functional languages is the concept of higher-order functions, or
-functions that can accept other functions as arguments.  Two common
-built-in higher order functions are \emph{map} and \emph{fold},
-illustrated in Figure~\ref{figure:chapter2:functional}.  Given a list,
-\emph{map} takes as an argument a function $f$ (that takes a single
-argument) and applies it to all elements in a list (the top part of
-the diagram).  Given a list, \emph{fold} takes as arguments a function
-$g$ (that takes two arguments) and an initial value:\ $g$ is first
-applied to the initial value and the first item in the list, the
-result of which is stored in an intermediate variable.  This
-intermediate variable and the next item in the list serve as the
-arguments to a second application of $g$, the results of which are
-stored in the intermediate variable.  This process repeats until all
-items in the list have been consumed; \emph{fold} then returns the
-final value of the intermediate variable.  Typically, \emph{map} and
-\emph{fold} are used in combination.  For example, to compute the sum
-of squares of a list of integers, one could map a function that
-squares its argument (i.e., $\lambda x. x^2$) over the input list, and
-then fold the resulting list with the addition function (more
-precisely, $\lambda x \lambda y. x + y$) using an initial value of
-zero.
+MapReduce has its roots in functional programming, exemplified by
+languages such as Lisp and ML, because the functional paradigm
+provides a number of convenient constructs for data-intensive
+distributed processing.\footnote{However, there are important
+  characteristics of MapReduce that make it non-functional in
+  nature---this will become apparent later.}  A key feature of
+functional languages is the treatment of functions as first-class
+citizens and the concept of higher-order functions, or functions that
+take other functions as arguments. The most common higher-order
+function is \texttt{map}, which takes as an argument a function $f$
+and applies $f$ to all elements in a collection. This is exactly what
+we need to capture data parallelism---$f$ is the computation we wish
+to apply to {\it each} input record, and the \texttt{map} expresses
+the processing of all input records. In Scala, we can define a
+function that takes an integer and computes its square (i.e., $f:
+\lambda x . x^2$) as follows:
+
+\begin{quote}
+\begin{verbatim}
+> val f = (x: Int) => x * x
+\end{verbatim}
+\end{quote}
+
+\noindent We can then map over an array as follows:
+
+\begin{quote}
+\begin{verbatim}
+> val r = Array(1, 2, 3, 4, 5).map(f)
+r: Array[Int] = Array(1, 4, 9, 16, 25)
+\end{verbatim}
+\end{quote}
+
+\noindent Here, we are mapping $f$ over an array of integers to yield
+another array that contains each of the integers squared. In Scala, as
+in many programming languages, \texttt{map} is available as a method
+of a collection of objects. In this case we are mapping over an array
+(a specific implementation), but as a logical operator \texttt{map}
+can be applied to any finite collection, arbitrarily
+large. Furthermore, the independence between each application of $f$
+to each element in a collection means that \texttt{map} can be
+arbitrarily parallelized---for example, each element might be handled
+by a separate thread in a multi-core processor or by multiple workers
+across different machines in a cluster.
+
+With \texttt{map} we can tackle embarrassingly parallel problems
+(e.g., recognize the person in a billion distinct headshots), but any
+interesting computation will require processing multiple elements
+together. This is where the higher-order function \texttt{fold}
+(specifically, left \texttt{fold}) comes in. Given a list,
+\texttt{fold} takes as arguments a function $g$ (that takes two
+arguments) and an initial value:\ $g$ is first applied to the initial
+value and the first item in the list, the result of which is stored in
+an intermediate variable.  This intermediate variable and the next
+item in the list serve as the arguments to a second application of
+$g$, the results of which are stored in the intermediate variable.
+This repeats until all items in the list have been consumed;
+\texttt{fold} then returns the final value of the intermediate
+variable. In other words, \texttt{fold} defines an aggregation across
+elements in a list. For example, we can define a function $g$ that
+adds its arguments (i.e., $g: \lambda x \lambda y. x + y$) as follows:
+
+\begin{quote}
+\begin{verbatim}
+> val g = (x: Int, y: Int) => x + y
+\end{verbatim}
+\end{quote}
+
+\noindent We can then fold an array as follows:
+
+\begin{quote}
+\begin{verbatim}
+> val s = Array(1, 2, 3, 4, 5).foldLeft(0)(g)
+s: Int = 15
+\end{verbatim}
+\end{quote}
+
+\noindent Typically, \texttt{map} and \texttt{fold} are used in combination.
+For example, to compute the sum of squares of a list of integers, we
+could map $f$ and then fold $g$ using an initial value of zero:
+
+\begin{quote}
+\begin{verbatim}
+> val r = Array(1, 2, 3, 4, 5).map(f).foldLeft(0)(g)
+r: Int = 55
+\end{verbatim}
+\end{quote}
+
+\noindent Graphically, this is shown in Figure~\ref{figure:chapter2:functional}.
+
+\todo{This is at the logical level - physical level, partitions of
+  input records get sent to workers, etc.}
 
 \begin{figure}[t]
 \begin{center}
@@ -232,6 +360,11 @@ algorithms into a sequence of MapReduce jobs.  Subsequent chapters in
 this book focus on how a number of algorithms can be implemented in
 MapReduce.
 
+\todo{Redirect output - the group by.}
+
+\section{MapReduce Basics}
+\label{chapter2:mappers-and-reducers}
+
 To be precise, MapReduce can refer to three distinct but related
 concepts.  First, MapReduce is a programming model, which is the sense
 discussed above.  Second, MapReduce can refer to the execution
@@ -250,9 +383,6 @@ explicitly discuss throughout the book.  However, we take a rather
 Hadoop-centric view of MapReduce, since Hadoop remains the most mature
 and accessible implementation to date, and therefore the one most
 developers are likely to use.
-
-\section{MapReduce Basics}
-\label{chapter2:mappers-and-reducers}
 
 \subsection{Mappers and Reducers}
 
@@ -279,6 +409,15 @@ keys and values in the design of various algorithms.
 
 In MapReduce, the programmer defines a mapper and a reducer with the
 following signatures:
+
+\begin{quote}
+\begin{verbatim}
+map: (k1, v1) => List[(k2, v2)]
+reduce: (k2, List[v2]) => List[(k3, v3)]
+\end{verbatim}
+\end{quote}
+
+
 
 \begin{quote}
 map: $(k_1, v_1) \rightarrow [(k_2, v_2)]$ \\
@@ -812,6 +951,26 @@ The gold standard, of course, is linear scalability:\ an algorithm
 running on twice the amount of data should take only twice as long.
 Similarly, an algorithm running on twice the number of nodes should
 only take half as long.  
+
+
+\todo{Talk about object lifecycle:\ mapper's \texttt{setup} and \texttt{cleanup}}
+
+\begin{verbatim}
+class Mapper {
+  def setup() = {
+    ...
+  }
+
+  def map(key: Long, value: Text) = {
+    ...
+  }
+
+  def cleanup() = {
+    ...
+  }
+}
+\end{verbatim}
+
 
 The chapter is organized as follows:
 
