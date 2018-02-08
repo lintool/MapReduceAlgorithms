@@ -502,7 +502,7 @@ document id in the reducer.
     \State $t_{prev} \gets t$
     \EndProcedure
     \Procedure{Close}{}
-      \State $\textsc{Emit}(\textrm{term }t, \textrm{ postings } P)$
+      \State $\textsc{Emit}(t_{prev}, \textrm{ postings } P)$
     \EndProcedure
     \EndFunction
   \end{algorithmic}
